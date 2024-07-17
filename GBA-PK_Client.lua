@@ -64,7 +64,7 @@ local CurrentMapID = {0,0,0,0,0,0,0,0}
 local PreviousMapID = {0,0,0,0,0,0,0,0}
 local MapEntranceType = {1,1,1,1,1,1,1,1}
 local PlayerExtra1 = {0,0,0,0,0,0,0,0}
-local PlayerExtra2 = {0,0,0,0,0,0,0,0}
+local globalSpriteNo = {0,0,0,0,0,0,0,0}
 local PlayerExtra3 = {0,0,0,0,0,0,0,0}
 local PlayerExtra4 = {0,0,0,0,0,0,0,0}
 local PlayerVis = {1,0,0,0,0,0,0,0}
@@ -384,6 +384,266 @@ local FR_F_Sprites = {
 	{0, 0, 0, 0, 0, 1717960704, 2577031168, 2576965632, 2576983552, 0, 0, 0, 0, 26214, 436633, 432537, 16423321, 2577049952, 2863442272, 3435833696, 2863310336, 1717986304, 1140012032, 1111638016, 4080271360, 262842777, 262851242, 4110068940, 4282821290, 4047791718, 256132164, 256119169, 256132340, 4134404096, 1744826368, 1869590272, 2186063616, 2202726400, 268369920, 0, 0, 256132340, 16008271, 1046770, 1044274, 63539, 68, 0, 0}
 }
 
+local TEMPLATE = {
+	--1 Facing Left
+	
+	--2 Facing Up
+	
+	--3 Facing Down
+	
+	--4 Side Left Walk Cycle 1
+	
+	--5 Side Left Walk Cycle 2
+	
+	--6 Up Walk Cycle 1
+	
+	--7 Up Walk Cycle 2
+	
+	--8 Down Walk Cycle 1
+	
+	--9 Down Walk Cycle 2
+	
+	--10 Side Left Bike Facing
+	
+	--11 Side Up Bike Facing
+	--12 Side Down Bike Facing
+	
+	--13 Side Left Bike Cycle 1
+	--14 Side Left Bike Cycle 2
+	--15 Side Up Bike Cycle 1
+	
+	--16 Side Up Bike Cycle 2
+	
+	--17 Side Down Bike Cycle 1
+	
+	--18 Side Down Bike Cycle 2
+	
+	--19 Run Side Left Idle
+	
+	--20 Run Side Left Cycle 1
+	
+	--21 Run Side Left Cycle 2
+	
+	--22 Run Side Up Idle
+	
+	--23 Run Side Up Cycle 1
+	
+	--24 Run Side Up Cycle 2
+	
+	--25 Run Side Down Idle
+	
+	--26 Run Side Down Cycle 1
+	
+	--27 Run Side Down Cycle 2
+
+	--28 Surf down idle Cycle 1
+
+	--29 Surf up idle Cycle 1   
+	
+	--30 Surf side idle Cycle 1
+	
+	--31 Surf down idle Cycle 2
+	
+	--32 Surf up idle Cycle 2	
+
+	--33 Surf side idle Cycle 2
+	--34 Surf sit down
+	
+	--35 Surf sit up
+	
+	--36 Surf sit side
+}
+
+local EM_Green_Male_Sprites = {
+	--1 Facing Left
+	{1431306240, 2665828352, 4008334592, 2595153920, 0, 0, 1280, 24144, 24293, 5609881, 93952494, 1503238553, 2863328000, 3149640704, 2165388288, 830542848, 847320064, 858996736, 860094464, 1145044992, 100244410, 16353467, 16287880, 16287887, 1045295, 1000227, 63539, 1030980, 4174643200, 3481534464, 3750690816, 4293918720, 4293918720, 2296315904, 4293918720, 0, 16403343, 16496892, 1032189, 65535, 4095, 3915, 255, 0},
+	
+	--2 Facing Up
+	{1592086528, 2576979200, 4008267776, 3919156480, 0, 0, 0, 0, 1365, 24297, 388846, 5893790, 2576981760, 2576977664, 2575954752, 2559066944, 4294128640, 573784064, 1155526656, 4287119104, 16357785, 16292249, 71276697, 70551689, 4407295, 275234, 1047876, 15960319, 3959376960, 2857360704, 1146093312, 3154112512, 4294242304, 4098158592, 268369920, 0, 80019390, 148763818, 9434180, 1048507, 1003519, 1000527, 65520, 0},
+	
+	--3 Facing Down
+	{1431306240, 2665807872, 4008267776, 2862280704, 0, 0, 1280, 24144, 351973, 5872025, 367006, 1026474, 2929442560, 4004208384, 286388800, 403784256, 673395712, 590561280, 860876800, 4287115008, 16497130, 16104174, 70193425, 69472641, 4403842, 275250, 1045555, 15894783, 3633257536, 2295651648, 2370830080, 1157623808, 4294242304, 4105039872, 268369920, 0, 79820941, 148721032, 9434328, 1048388, 1003519, 1038927, 65520, 0},
+	
+	--4 Side Walk Cycle 1
+	{0, 1431306240, 2665828352, 4008334848, 0, 0, 0, 1280, 24144, 24293, 5609881, 93952494, 2595153920, 2863328000, 3149640704, 4044436480, 830542848, 847320064, 858996736, 860094464, 1503238553, 100244410, 16353467, 16287880, 16287887, 1045295, 1000227, 63539, 1212153856, 4286840832, 3438604288, 3724496640, 4294201088, 4282707968, 16711680, 0, 1031048, 16403336, 16496783, 1032191, 16646143, 16629759, 1035504, 65280},
+	
+	--5 Side Walk Cycle 2
+	{0, 1431306240, 2665828352, 4008334848, 0, 0, 0, 1280, 24144, 24293, 5609881, 93952494, 2595153920, 2863328000, 3149640704, 2165388288, 830542848, 847320064, 858996736, 860094464, 1503238553, 100244410, 16353467, 16287880, 16287887, 1045295, 1000227, 63539, 3560964096, 2370043904, 4174643200, 4169461760, 4170174208, 4294692608, 256176128, 16711680, 1030984, 16403455, 16498636, 1032157, 16056319, 16011263, 1044480, 0},
+	
+	--6 Up Walk Cycle 1
+	{98893824, 1592086528, 2576979200, 4008267776, 0, 0, 0, 0, 0, 1365, 24297, 388846, 3919156480, 2576981760, 2576977664, 2575954752, 2559066944, 4294128640, 573787904, 1149812480, 5893790, 16357785, 16292249, 71276697, 70551689, 4407295, 275234, 33604, 4287623168, 3959418880, 2857365504, 1146044416, 3154051072, 4294901760, 1155465216, 4293918720, 997631, 1003454, 5043370, 9303108, 589755, 4095, 15, 0},
+	
+	--7 Up Walk Cycle 2
+	{98893824, 1592086528, 2576979200, 4008267776, 0, 0, 0, 0, 0, 1365, 24297, 388846, 3919156480, 2576981760, 2576977664, 2575954752, 2559066944, 4294128640, 573784064, 1143472128, 5893790, 16357785, 16292249, 71276697, 70551689, 4407295, 16003874, 16615492, 4286836736, 3958697984, 2857354240, 1146083328, 3154083840, 4293918720, 4026531840, 0, 1046783, 1048510, 1045674, 324676, 65467, 65535, 64836, 4095},
+	
+	--8 Down Walk Cycle 1
+	{0, 1431306240, 2665807872, 4008595456, 0, 0, 0, 1280, 24144, 351973, 5872025, 367086, 2862280704, 2929442560, 4004208384, 286388800, 403784256, 673395712, 590565120, 860879680, 1026474, 16497130, 16104174, 70193425, 69472641, 4403842, 275250, 1045555, 4287626112, 3632855040, 2286878720, 1157562368, 4294443008, 4216258560, 1256128512, 4293918720, 15874303, 9435277, 16568200, 16637912, 1048575, 4095, 15, 0},
+	
+	--9 Down Walk Cycle 2
+	{0, 1431306240, 2665807872, 4008595456, 0, 0, 0, 1280, 24144, 351973, 5872025, 367086, 2862280704, 2929442560, 4004208384, 286388800, 403784256, 673395712, 590565120, 860879680, 1026474, 16497130, 16104174, 70193425, 69472641, 4403842, 275250, 1045555, 4287626112, 3632855040, 2286878720, 1157562368, 4294443008, 4216258560, 1256128512, 4293918720, 15874303, 9435277, 16568200, 16637912, 1048575, 4095, 15, 0},
+	
+	--10 Side Bike Facing
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1431633920, 2582533376, 4008617392, 2578094464, 3149573792, 0, 80, 1509, 1518, 350617, 5872030, 93952409, 6265243, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3149642560, 2400260928, 4061663552, 4062720832, 858993887, 859110879, 1146064880, 4079111375, 1022091, 1017992, 1017992, 65330, 324659, 16428932, 262451192, 263979007, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1711276032, 4284481536, 4109762560, 255787008, 2503933952, 334495744, 4278190080, 4281597407, 4294967286, 4294964447, 2296378189, 4294917964, 1503606175, 89191185, 4095, 16777215, 1718026239, 4294964303, 1145359867, 4042081535, 4182004720, 823213824, 4294963200, 0, 0, 6, 111, 243, 243, 15, 0},
+
+	--11 Up Bike Facing
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5242880, 98893824, 1592086528, 4008613120, 4008267776, 4003045120, 2576981760, 0, 0, 0, 1365, 24302, 368366, 16357870, 16357785, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2576977664, 2575954752, 2559066944, 4294198272, 3959418880, 2856857344, 1145597696, 3153653760, 16292249, 71276697, 70551689, 4476927, 1048510, 15893674, 16155716, 1048507, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4294242304, 4294901760, 2146435072, 1961885696, 2649751552, 2130706432, 1879048192, 4026531840, 1003519, 65535, 4095, 3919, 4063, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--12 Down Bike Facing
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1431306240, 2665807872, 4008595456, 4008640256, 2862268160, 0, 1280, 24144, 351973, 5872025, 367086, 16751086, 16492970, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2929442560, 4004217664, 303121216, 673395952, 674448368, 860390128, 2290626304, 1341968224, 16497130, 70826734, 70521121, 256062082, 255079298, 254313523, 15878280, 117231604, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1871568880, 4294197248, 4260364288, 1844445184, 2632974336, 1862270976, 1610612736, 4026531840, 268294390, 282623, 4063, 4063, 4047, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--13 Side Bike Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1342177280, 3847573504, 2577327440, 4008635227, 2577050088, 3149638378, 0, 5, 94, 94, 21913, 367001, 5872025, 391577, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3149642676, 2297499956, 2401337620, 790790964, 858993487, 1127436255, 2219806704, 4079111375, 63880, 63624, 63624, 4083, 20291, 1026808, 16403192, 16498687, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1711276032, 4284481536, 2499149824, 255787008, 4114546688, 334495744, 4278190080, 4080270815, 4294967295, 4294245455, 4294967236, 2382315276, 4288624121, 89191185, 4095, 1048575, 1718026239, 4294964479, 1145360312, 4042081528, 1598313471, 823213824, 4294963200, 0, 0, 6, 111, 243, 243, 15, 0},
+
+	--14 Side Bike Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1431306240, 2665828352, 4008401664, 2594826240, 3148540416, 0, 1280, 24144, 24293, 5609881, 93952494, 1503238553, 100243899, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3149640704, 4044436480, 562107392, 579024112, 859000287, 860851679, 2228785136, 4079111375, 16353467, 16287880, 16287887, 1045295, 5194547, 262928451, 4199219192, 4223664127, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1711276032, 4284481536, 2499149824, 255787008, 4114546688, 334495744, 4278190080, 4281597407, 4294967295, 4170054735, 3096444868, 4294917900, 1503606265, 89191185, 4095, 268435455, 1718026239, 4294964303, 1145359839, 4042081525, 1598313456, 823213824, 4294963200, 0, 0, 6, 111, 243, 243, 15, 0},
+
+	--15 Up Bike Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 327680, 90066944, 1592677632, 4008634704, 4008613120, 4008286704, 2576980464, 0, 0, 0, 85, 1518, 23022, 1022366, 1022361, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2576980208, 2576916276, 2575860788, 4294919232, 4005560064, 2862908144, 1145341680, 3149893376, 1018265, 4454793, 4409480, 279807, 65531, 993354, 1009732, 65531, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4294963200, 4294963200, 2147348480, 2499739648, 2112880640, 2130706432, 1879048192, 4026531840, 65535, 65535, 4095, 3919, 4063, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--16 Up Bike Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 83886080, 1582301184, 3998547968, 4008267776, 4002742272, 3919179776, 2577002496, 0, 0, 5, 21854, 388846, 5893870, 261725934, 261724569, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2576936960, 2560111616, 2290365440, 4282662912, 3221159936, 2760044544, 1149693952, 3213819904, 260675993, 1140427161, 1128827033, 71630847, 16776174, 254298794, 258491460, 16776123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4294901760, 4294901760, 2146435072, 1961885696, 2112880640, 2667577344, 1879048192, 4026531840, 1048575, 1048575, 1040383, 65359, 4063, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--17 Down Bike Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1342177280, 3847553024, 2582532096, 4008633600, 4008636400, 2863246320, 0, 5, 20574, 365918, 367001, 22942, 1046942, 1030810, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2867444720, 4008361780, 287380532, 578958144, 579023935, 859080751, 2290631408, 1341968224, 1031070, 4455342, 4407570, 275240, 15942456, 15894595, 16002952, 117231604, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1871568880, 4294197248, 4261408768, 2649751552, 1827667968, 1862270976, 1610612736, 4026531840, 268294390, 282623, 4063, 4063, 4047, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--18 Down Bike Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1426063360, 3998220288, 4007985152, 4008701952, 2846617600, 0, 1280, 5267024, 93675237, 93952409, 5873390, 268017390, 263887530, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3921408000, 3938399232, 554972160, 2184396800, 2201239296, 881340160, 2297581312, 1341968224, 263954090, 1140567790, 1128337937, 70461474, 4081268770, 4069016371, 254052488, 117231604, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1871568880, 4294197248, 4260364288, 1844445184, 1827667968, 2667577344, 1610612736, 4026531840, 268294390, 282623, 1048543, 4063, 4047, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0},
+
+	--19 Run Left Idle
+	{1342177280, 3847573504, 2577327440, 4008634965, 0, 0, 0, 5, 94, 94, 21913, 367001, 2577051368, 3148524523, 3148524468, 2287014196, 2402386196, 791838996, 590558016, 858997760, 5872025, 391579, 63877, 63624, 63624, 4083, 65347, 1031160, 4292673536, 3431923712, 3717136384, 4293918720, 4293918720, 2296315904, 4293918720, 0, 16403336, 16498575, 1032191, 65535, 4095, 3915, 255, 0},
+	
+	--20 Run Left Cycle 1
+	{0, 1342177280, 3847573504, 2577327440, 0, 0, 0, 0, 5, 94, 94, 21913, 4008634966, 2577051368, 3148524522, 3148524468, 2287014196, 2402386196, 791838996, 590558016, 367001, 5872025, 391579, 63877, 63624, 325768, 4964339, 4980547, 859045632, 2379795696, 2298469616, 2298478336, 4294242304, 4282707968, 16711680, 0, 326591, 1025208, 1031048, 1047551, 16646143, 16629759, 1035504, 65280},
+	
+	--21 Run Left Cycle 2
+	{0, 1342177280, 3847573504, 2577327440, 0, 0, 0, 0, 5, 94, 94, 21913, 4008634966, 2577051368, 3148524522, 3148524468, 2287014196, 2402386196, 791838996, 590558016, 367001, 5872025, 391579, 63877, 63624, 63624, 4083, 65347, 858997940, 3713006516, 2380206064, 2298474496, 4170174208, 4294692608, 256176128, 16711680, 1045039, 16567094, 16572296, 1048573, 16056319, 16011263, 1044480, 0},
+	
+	--22 Run Up Idle
+	{1441071104, 4008005632, 4008613120, 4008267776, 0, 0, 0, 0, 0, 1365, 24302, 368366, 4003045120, 2576981760, 2576977664, 2575926080, 2559066944, 4294201088, 3952082688, 2856901872, 16357870, 16357785, 16292249, 71276697, 70551689, 16011263, 16775358, 265127082, 1145605616, 3153657600, 2289037312, 4294242304, 4098158592, 268369920, 0, 0, 265847876, 16748475, 1046152, 1003519, 1000527, 65520, 0, 0},
+	
+	--23 Run Up Cycle 1
+	{5242880, 1441071104, 4008005632, 4008613120, 0, 0, 0, 0, 0, 0, 1365, 24302, 4008267776, 4003045120, 2576981760, 2576977664, 2575926080, 2559066944, 4294956272, 4005100528, 368366, 16357870, 16357785, 16292249, 71276697, 70551689, 16008447, 1048459, 2862903040, 1145368576, 3149459456, 2288975872, 4294901760, 3722379264, 1718550528, 4293918720, 1038410, 16568132, 16572411, 1046664, 4095, 15, 15, 0},
+
+	--24 Run Up Cycle 2
+	{5242880, 1441071104, 4008005632, 4008613120, 0, 0, 0, 0, 0, 0, 1365, 24302, 4008267776, 4003045120, 2576981760, 2576977664, 2575926080, 2559066944, 4282666752, 3103780864, 368366, 16357870, 16357785, 16292249, 71276697, 70551689, 256770047, 264211438, 2760765440, 1157418752, 3221081856, 2291134464, 4293918720, 4026531840, 4026531840, 0, 16140970, 1000516, 1018811, 63112, 65535, 64989, 63078, 4095},
+
+	--25 Run Down Idle
+	{0, 1431306240, 2665807872, 4008595456, 0, 0, 0, 1280, 24144, 351973, 5872025, 367086, 4008640256, 2862268160, 2929442560, 4004217664, 303121216, 673395712, 674496256, 860409072, 16751086, 16492970, 16497130, 70826734, 70521121, 4403842, 16724866, 265061427, 3758087664, 2296381184, 2379804672, 1341452288, 4108185600, 268369920, 0, 0, 266207229, 16776584, 1019352, 1003508, 1039695, 65520, 0, 0},
+	
+	--26 Run Down Cycle 1
+	{0, 0, 1431306240, 2665807872, 0, 0, 0, 0, 1280, 24144, 351973, 5872025, 4008595456, 4008640256, 2862268160, 2929442560, 4004217664, 303121216, 673395712, 674447360, 16095726, 268409326, 4227574186, 4227578346, 70826734, 70521121, 4403842, 275330, 860876800, 3640623104, 4241485824, 4258201600, 4293918720, 4026531840, 0, 0, 1045555, 1017997, 64904, 36863, 64957, 63078, 4095, 0},
+	
+	--27 Run Down Cycle 2
+	{0, 0, 1431306240, 2665807872, 0, 0, 0, 0, 1280, 24144, 351973, 5872025, 4008595456, 4008640496, 2862268351, 2929442751, 4004217664, 303121216, 673395712, 674447360, 367086, 16751086, 16492970, 16497130, 70826734, 70521121, 4403842, 275330, 860876800, 3632852992, 2296315904, 4294443008, 3688824832, 1718550528, 4293918720, 0, 1045555, 589709, 1047759, 64735, 4095, 15, 0, 0}
+	
+	--28 Surf down idle Cycle 1
+	
+	--29 Surf up idle Cycle 1   
+	
+	--30 Surf side idle Cycle 1
+	
+	--31 Surf down idle Cycle 2
+	
+	--32 Surf up idle Cycle 2	
+
+	
+	--33 Surf side idle Cycle 2
+	--34 Surf sit down
+	
+	--35 Surf sit up
+	
+	--36 Surf sit side
+}
+
+local EM_Green_Female_Sprites = {
+	--1 Facing Left
+	{1476395008, 2857893888, 2594799616, 4002969600, 0, 0, 0, 559104, 143178629, 2344323498, 146315753, 9406958, 1149728768, 2005432064, 2014413824, 2189497344, 2189497344, 858996736, 2202271744, 2254438400, 16217156, 16217975, 16197415, 16217975, 1001332, 1000520, 33864, 2184, 4141350912, 4016570368, 2682191872, 4193255424, 1727004672, 2380201984, 4293918720, 0, 143, 65534, 1025785, 1031071, 65382, 3915, 255, 0},
+
+	--2 Facing Up
+	{1488627712, 2830874624, 3095953408, 2310770432, 0, 0, 0, 559104, 9087877, 9157514, 559243, 16300952, 3149430528, 2290579440, 2004305136, 2000979072, 1145587840, 1216606448, 860815360, 4284608512, 16223163, 259487880, 256145271, 138953847, 142902340, 252655748, 62515, 988927, 3597659904, 2293800704, 2877681664, 3129995264, 1714356224, 4249812992, 267386880, 0, 16709229, 16354184, 1005754, 1046699, 62054, 62687, 4080, 0},
+
+	--3 Facing Down
+	{1488697344, 2857940992, 2863366144, 4002959104, 0, 0, 0, 559104, 9157509, 9143722, 564969, 16026094, 1212645120, 1921460208, 1092121840, 404259968, 404965504, 590672112, 860815360, 4294045696, 16217220, 259160104, 256344344, 138969473, 142881409, 252658482, 62515, 991231, 3607031552, 3724123904, 2875191296, 3714510848, 1714356224, 4249812992, 267386880, 0, 16707437, 16359389, 1045946, 1009373, 62054, 62687, 4080, 0},
+
+	--4 Side Left Walk Cycle 1
+	{0, 1476395008, 2874671104, 2595979264, 0, 0, 0, 0, 559104, 143178629, 2344323498, 146315758, 4002969600, 1149728768, 2005432064, 2014413824, 2189497344, 2189497344, 858996736, 2202271744, 9405854, 16217156, 16217975, 16197415, 16217975, 1001332, 1000520, 33864, 2254438400, 805109760, 4277137408, 4188004096, 2415759104, 1720250368, 16711680, 0, 2184, 134, 65533, 1025789, 1031128, 16645990, 1035504, 65280},
+
+	--5 Side Left Walk Cycle 2
+	{0, 1476395008, 2874671104, 2595979264, 0, 0, 0, 0, 559104, 143178629, 2344323498, 146315758, 4002969600, 1149728768, 2005432064, 2014413824, 2189497344, 2189497344, 858996736, 2202271744, 9405854, 16217156, 16217975, 16197415, 16217975, 1001332, 1000520, 33864, 2254438400, 651689984, 4251451392, 4175425536, 2381762304, 1727778560, 266203136, 16711680, 2184, 2303, 65518, 1027993, 16759807, 16318310, 1048320, 0},
+
+	--6 Up Walk Cycle 1
+	{8945664, 1488627712, 2830874624, 3095953408, 0, 0, 0, 0, 559104, 9087877, 9157514, 559243, 2310770432, 3149430528, 2290579440, 2004305136, 2000979072, 1145587840, 1216606448, 860815360, 16300952, 16223163, 259487880, 256145271, 138953847, 142902340, 252655748, 62515, 4285132800, 3597266944, 2378166272, 3101028352, 2828992512, 1668218880, 3723493376, 4278190080, 988927, 1001069, 16672904, 16354218, 1018555, 1638, 15, 0},
+
+	--7 Up Walk Cycle 2
+	{8945664, 1488627712, 2830874624, 3095953408, 0, 0, 0, 0, 559104, 9087877, 9157514, 559243, 2310770432, 3149430528, 2290579440, 2004305136, 2000979072, 1145587840, 1216606448, 860815360, 16300952, 16223163, 259487880, 256145271, 138953847, 142902340, 252655748, 62515, 4284608512, 3596939264, 2290544384, 2864226048, 3148410880, 1717567488, 4026531840, 0, 1021695, 1021549, 1047512, 1006987, 63882, 63030, 4061, 255},
+
+	--8 Down Walk Cycle 1
+	{8945664, 1488697344, 2857940992, 2863366144, 0, 0, 0, 0, 559104, 9157509, 9143722, 564969, 4002959104, 1212645120, 1921460208, 1092121840, 404259968, 404965504, 590672112, 860856064, 16026094, 16217220, 259160104, 256344344, 138969473, 142881409, 252658482, 62515, 4285505280, 3599298560, 3720282112, 2883518464, 3715039232, 1693450240, 3572498432, 4278190080, 991119, 1044214, 1022461, 62858, 65501, 4095, 15, 0},
+
+	--9 Down Walk Cycle 2
+	{8945664, 1488697344, 2857940992, 2863366144, 0, 0, 0, 0, 559104, 9157509, 9143722, 564969, 4002959104, 1212645120, 1921460208, 1092121840, 404259968, 404965504, 590672112, 860815360, 16026094, 16217220, 259160104, 256344344, 138969473, 142881409, 252658482, 16380979, 4176605184, 3756978176, 3751407616, 2824798208, 3724476416, 4293918720, 4026531840, 0, 16381695, 1017965, 64477, 64954, 63197, 3910, 3917, 255},
+
+	--10 Side Left Bike Facing
+	
+	--11 Side Up Bike Facing
+	--12 Side Down Bike Facing
+	
+	--13 Side Left Bike Cycle 1
+	--14 Side Left Bike Cycle 2
+	--15 Side Up Bike Cycle 1
+	
+	--16 Side Up Bike Cycle 2
+	
+	--17 Side Down Bike Cycle 1
+	
+	--18 Side Down Bike Cycle 2
+	
+	--19 Run Side Left Idle
+	{0, 2237136896, 2863290368, 3920275840, 0, 0, 0, 0, 2184, 559291, 9157509, 571550, 4008614008, 1145341816, 2004322423, 662180228, 2005041428, 1954709780, 1211315008, 1216562176, 36745, 63348, 63351, 63271, 63351, 3911, 3908, 132, 4284874752, 4002349056, 2576285696, 4293918720, 1727004672, 2296315904, 4293918720, 0, 65496, 1025759, 1031135, 65501, 3942, 3913, 255, 0},
+
+	--20 Run Side Left Cycle 1
+	{0, 0, 2237136896, 2863290368, 0, 0, 0, 0, 0, 2184, 559291, 9157509, 3920275840, 4008614008, 1145341816, 2004322423, 1920471428, 2005041428, 1211269396, 2201170752, 571550, 36745, 63348, 62583, 1013618, 1013623, 16009079, 1016904, 1212367872, 573107952, 2298452464, 3758096128, 3606331392, 4282707968, 16711680, 0, 1022082, 65528, 1025757, 1031133, 16643693, 16621567, 1035504, 65280},
+
+	--21 Run Side Left Cycle 2
+	{0, 0, 2237136896, 2863290368, 0, 0, 0, 0, 0, 2184, 559291, 9157509, 3920275840, 4008614008, 1145341816, 2004322423, 1920471428, 2005041428, 1211269396, 2201170752, 571550, 36745, 63348, 62583, 1013618, 1013623, 16009079, 1016904, 1715684502, 913308054, 2380206064, 2297462784, 3758083840, 4285128448, 256765952, 16711680, 1046660, 16707362, 16359416, 1048029, 16017117, 16011263, 1044480, 0},
+
+	--22 Run Side Up Idle
+	{1488627712, 2830874624, 3095953408, 2310770432, 0, 0, 0, 559104, 9087877, 9157514, 559243, 16300952, 3149430528, 2290579440, 2004305136, 2000979072, 1145587840, 1216606448, 860880640, 3597180656, 16223163, 259487880, 256145271, 138953847, 142902340, 252655748, 16774195, 266962541, 2295892464, 2877685504, 3129995264, 1714356224, 4259250176, 267386880, 0, 0, 261655944, 16734394, 1046699, 62054, 64991, 4080, 0, 0},
+
+	--23 Run Side Up Cycle 1
+	{8945664, 1488627712, 2830874624, 3095953408, 0, 0, 0, 0, 559104, 9087877, 9157514, 559243, 2310770432, 3149428720, 2290579327, 2004305023, 2000979087, 1145589744, 1216606208, 860827392, 16300952, 259492795, 4151801992, 4148459383, 4165485687, 267682884, 997508, 62515, 3597025024, 2380263424, 3101028352, 2828398592, 1668218880, 3723493376, 1727004672, 4278190080, 1001069, 16705672, 16354218, 1018555, 1638, 15, 15, 0},
+
+	--24 Run Side Up Cycle 2
+	{8945664, 1488627712, 2830874624, 3095953408, 0, 0, 0, 0, 559104, 9087877, 9157514, 559243, 2310770432, 3149428720, 2290579327, 2004305023, 2000979087, 1145589744, 1216606208, 860815360, 16300952, 259492795, 4151801992, 4148459383, 4165485687, 267682884, 997508, 15922227, 3596939264, 2291068672, 2864226048, 3148410880, 1717567488, 4026531840, 4026531840, 0, 15951469, 1048024, 1006987, 1005962, 63030, 4061, 3942, 255},
+
+	--25 Run Side Down Idle
+	{146505728, 1488683008, 2857926656, 2863366144, 0, 0, 0, 34816, 572288, 572293, 558506, 564906, 2863222528, 4002905856, 1212622832, 1921545456, 1092125824, 404965504, 673513216, 860876528, 16051950, 16218606, 259159172, 256346152, 138969368, 142881409, 16728706, 267318323, 1879022064, 3714055936, 3714641920, 1716453376, 4108255232, 267386880, 0, 0, 261750774, 16774621, 1017565, 62566, 64847, 4080, 0, 0},
+
+	--26 Run Side Down Cycle 1
+	{8912896, 146505728, 1488683008, 2857926656, 0, 0, 0, 0, 34816, 572288, 572293, 558506, 2863367776, 2863222678, 4002904054, 1212622719, 1921545343, 1092126848, 404953088, 673513216, 564906, 16027374, 259488238, 4151473284, 4148660264, 2290647320, 8467073, 16728706, 860876800, 1753608192, 3713921024, 1725431808, 3438280704, 1156579328, 4278190080, 0, 586803, 540550, 1048303, 63903, 4095, 15, 0, 0},
+
+	--27 Run Side Down Cycle 2
+	{8912896, 146505728, 1488683008, 2857926656, 0, 0, 0, 0, 34816, 572288, 572293, 558506, 2863366144, 2863222528, 4002904048, 1212622719, 2189980799, 2165868680, 404953088, 673513216, 107519658, 1777635054, 1870100974, 4151473284, 4148660263, 143163668, 8467073, 16728706, 860848128, 1760788480, 4277137408, 4187947008, 4293918720, 4026531840, 0, 0, 1045555, 1005702, 1037789, 36198, 4044, 3908, 255, 0},
+
+	--28 Surf down idle Cycle 1
+
+	--29 Surf up idle Cycle 1   
+	
+	--30 Surf side idle Cycle 1
+	
+	--31 Surf down idle Cycle 2
+	
+	--32 Surf up idle Cycle 2	
+
+	--33 Surf side idle Cycle 2
+	--34 Surf sit down
+	
+	--35 Surf sit up
+	
+	--36 Surf sit side
+}
+
+
 function ClearAllVar()
 	local MultFlags = 0
 	LockFromScript = 0
@@ -486,17 +746,6 @@ function createChars(StartAddressNo, SpriteID, SpriteNo, IsBiking)
 	--Tile number 180 = Player3
 	--Tile number 175 = Player4
 	--First will be the 4 bytes, or 32 bits
-	--SpriteID means a sprite from the chart below
-	--1 = Side Left (Right must be set with facing variable)
-	--3 = Side Down
-	--2 = Side Up
-	--4-9 = Walking
-	--10-12 = Biking Idle Positions
-	--13-18 = Biking
-	--19-21 = Running Idle Positions
-	--22-27 = Running
-	--28-33 = Surfing stuff
-	
 	
 	--Start address. 100745216 = 06014000 = 184th tile. can safely use 32.
 	--CHANGE 100746752 = 190th tile = 2608
@@ -505,8 +754,8 @@ function createChars(StartAddressNo, SpriteID, SpriteNo, IsBiking)
 	if ScreenData ~= 0 then
 
 	--Firered Male/Female Sprite
-	if SpriteNo < 2 then
-		ConsoleForText:print("SpriteID in DrawChar: " .. SpriteID .. string.char(10))
+	if SpriteNo ~= 2 then
+		--ConsoleForText:print("SpriteID in DrawChar: " .. SpriteID .. string.char(10)) -- debug
 		if SpriteID < 10 then
 			SpriteTempVar0 = ActualAddress
 
@@ -536,6 +785,19 @@ function createChars(StartAddressNo, SpriteID, SpriteNo, IsBiking)
 		elseif SpriteNo == 0 then
 			for i = 1, #FR_F_Sprites[SpriteID] do
 				SpriteTempVar1 = FR_F_Sprites[SpriteID][i]
+				emu:write32(SpriteTempVar0, SpriteTempVar1) 
+				SpriteTempVar0 = SpriteTempVar0 + 4
+			end
+		--Emerald Male Sprite
+		elseif SpriteNo == 3 then
+			for i = 1, #EM_Green_Male_Sprites[SpriteID] do
+				SpriteTempVar1 = EM_Green_Male_Sprites[SpriteID][i]
+				emu:write32(SpriteTempVar0, SpriteTempVar1) 
+				SpriteTempVar0 = SpriteTempVar0 + 4
+			end
+		elseif SpriteNo == 4 then
+			for i = 1, #EM_Green_Female_Sprites[SpriteID] do
+				SpriteTempVar1 = EM_Green_Female_Sprites[SpriteID][i]
 				emu:write32(SpriteTempVar0, SpriteTempVar1) 
 				SpriteTempVar0 = SpriteTempVar0 + 4
 			end
@@ -643,8 +905,6 @@ function createChars(StartAddressNo, SpriteID, SpriteNo, IsBiking)
 			emu:write32(SpriteTempVar0, SpriteTempVar1) 
 			end
 		end
-	--Emerald Male Sprite
-	elseif	SpriteNo == 3 then
 	end
 end
 
@@ -733,14 +993,13 @@ function FixAddress()
 	end
 end
 
-
 function Loadscript(ScriptNo)
 	local ScriptAddressTemp = 0
-	local ScriptAddressTemp1 = 0
-	--2 is where the script itself is, whereas 1 is the memory to force it to read that. 3 is an extra address to use alongside it, such as multi-choice
-	local u32 ScriptAddress2 = 145227776
+	local ScriptAddressTemp1 = 0				--memory to force it to read the script in scriptaddress2
+
+	local u32 ScriptAddress2 = 145227776		--location of script
 	
-	local u32 ScriptAddress3 = 145227712
+	local u32 ScriptAddress3 = 145227712		--extra address for stuff like multi-choice
 	
 	local MultichoiceAdr2 = ScriptAddress3 - 32
 	local TextToNum = 0
@@ -899,19 +1158,19 @@ function Loadscript(ScriptNo)
 				ScriptAddressTemp1 = 4294967040
 				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
 				--For buffer 2
-				ScriptAddressTemp = Buffer2
+				ScriptAddressTemp = 33692912
 				ScriptAddressTemp1 = Buffer[1]
 				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = Buffer2 + 1
+				ScriptAddressTemp = 33692912 + 1
 				ScriptAddressTemp1 = Buffer[2]
 				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = Buffer2 + 2
+				ScriptAddressTemp = 33692912 + 2
 				ScriptAddressTemp1 = Buffer[3]
 				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = Buffer2 + 3
+				ScriptAddressTemp = 33692912 + 3
 				ScriptAddressTemp1 = Buffer[4]
 				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = Buffer2 + 4
+				ScriptAddressTemp = 33692912 + 4
 				ScriptAddressTemp1 = 255
 				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
 				--First save multichoice in case it's needed later
@@ -2016,7 +2275,7 @@ function LoadScriptIntoMemory()
 				--END Block
 end
 
-function SendMultiplayerPackets(Offset, size)
+function SendMultiplayerPackets(Offset, size, Socket)
 	local Packet = ""
 	local ModifiedSize = 0
 	local ModifiedLoop = 0
@@ -2026,7 +2285,7 @@ function SendMultiplayerPackets(Offset, size)
 	if Offset == 0 then Offset = 40099328 end
 	local ModifiedRead = ""
 	if size > 0 then
-		CreatePackettSpecial("SLNK",size)
+		CreatePackettSpecial("SLNK",Socket,size)
 		for i = 1, size do
 			--Inverse of i, size remaining. 1 = last. Also size represents hex bytes, which goes up to 255 in decimal, so we triple it.
 			ModifiedSize = size - i + 1
@@ -2050,8 +2309,8 @@ function SendMultiplayerPackets(Offset, size)
 				else Packet = Packet .. ModifiedRead
 				end
 				if ModifiedLoop == 1 then
-					SocketMain:send(Packet)
-		--			ConsoleForText:print("Packet sent! Packet " .. Packet .. " end. Amount of loops: " .. ModifiedLoop2 .. " " .. Offset)
+					Socket:send(Packet)
+			--		ConsoleForText:print("Packet sent! Packet " .. Packet .. " end. Amount of loops: " .. ModifiedLoop2 .. " " .. Offset)
 					Packet = ""
 					ModifiedLoop = 0
 				else
@@ -2063,7 +2322,7 @@ function SendMultiplayerPackets(Offset, size)
 	end
 end
 
-function ReceiveMultiplayerPackets(size)
+function ReceiveMultiplayerPackets(size, Socket)
 	local Packet = ""
 	local ModifiedSize = 0
 	local ModifiedLoop = 0
@@ -2080,14 +2339,14 @@ function ReceiveMultiplayerPackets(size)
 		ModifiedSize = size - i + 1
 		if ModifiedSize > 20 and ModifiedLoop == 0 then
 			PacketAmount = PacketAmount + 1
-			Packet = SocketMain:receive(60)
+			Packet = Socket:receive(60)
 			ModifiedLoop = 20
 			ModifiedLoop2 = 0
 			ConsoleForText:print("Packet number: " .. PacketAmount)
 		elseif ModifiedSize <= 20 and ModifiedLoop == 0 then
 			PacketAmount = PacketAmount + 1
 			SizeMod = ModifiedSize * 3
-			Packet = SocketMain:receive(SizeMod)
+			Packet = Socket:receive(SizeMod)
 			ModifiedLoop = ModifiedSize
 			ModifiedLoop2 = 0
 			ConsoleForText:print("Last packet. Number: " .. PacketAmount)
@@ -2182,21 +2441,18 @@ function BattlescriptClassic()
 	--Battle loop
 	elseif BattleVars[1] == 2 then
 		BattleVars[12] = emu:read8(33700808)
+		BufferVars[20] = ""
 		
 		--If both players have not gone
 		if BattleVars[6] == 0 then
 			--You have not decided on a move
-			if BattleVars[4] >= 2 and EnemyBattleVars[4] ~= 4 then
+			if BattleVars[4] >= 1 and EnemyBattleVars[4] ~= 4 then
 				--Pause until other player has made a move
 				if BattleVars[12] < 32 then
 					BattleVars[12] = BattleVars[12] + 32
 					emu:write8(33700808, BattleVars[12])
 				end
 			elseif BattleVars[4] >= 4 and EnemyBattleVars[4] >= 4 then
-				if BattleVars[12] >= 32 then
-					BattleVars[12] = BattleVars[12] - 32
-					emu:write8(33700808, BattleVars[12])
-				end
 				if MasterClient == "h" then
 					if BattleVars[5] == 1 then
 						BattleVars[6] = 1
@@ -2219,20 +2475,63 @@ function BattlescriptClassic()
 			if BattleVars[7] == 0 then
 				BattleVars[7] = 1
 			--	BattleVars[13] = ReadBuffers()
-				ConsoleForText:advance(1)
-				ConsoleForText:print("First")
-			elseif BattleVars[7] == 1 then
+			--	ConsoleForText:print("First")
+			-- SEND DATA
+				CreatePackettSpecial("BAT2", Players[PlayerTalkingID])
+				
+			--Animate
+			elseif BattleVars[7] == 1 and EnemyBattleVars[7] == 1 and TurnTime == 0 then
+				if BattleVars[12] >= 32 then
+					BattleVars[12] = BattleVars[12] - 32
+					emu:write8(33700808, BattleVars[12])
+				end
+				
+			--Other player's turn. Pause.
+			elseif BattleVars[7] == 1 and TurnTime == 1 then
+				if BattleVars[12] < 32 then
+					BattleVars[12] = BattleVars[12] + 32
+					emu:write8(33700808, BattleVars[12])
+				end
+				BattleVars[7] = 2
+			--Once received then set 7 to 3.
+			elseif BattleVars[7] == 2 and string.len(BattleVars[20]) == 280 and string.len(BattleVars[21]) == 244 then
+				BattleVars[7] = 3
+			--Animate
+			elseif BattleVars[7] == 3 and EnemyBattleVars[7] == 3 then
+				if BattleVars[12] >= 32 then
+					BattleVars[12] = BattleVars[12] - 32
+					emu:write8(33700808, BattleVars[12])
+				end
+				BattleVars[7] = 4
+			--Lock after animations while waiting for other player
+			elseif BattleVars[7] == 4 and TurnTime == 2 then
+				if BattleVars[12] < 32 then
+					BattleVars[12] = BattleVars[12] + 32
+					emu:write8(33700808, BattleVars[12])
+				end
+			--Unlock if both players finish animations
+			elseif BattleVars[7] == 4 and TurnTime == 2 then
+				if BattleVars[12] < 32 then
+					BattleVars[12] = BattleVars[12] + 32
+					emu:write8(33700808, BattleVars[12])
+				end
+				BattleVars[7] = 4
 			end
 		--You go second
-			local TurnTime = emu:read8(33700834)
 		elseif BattleVars[6] == 2 then
+		local TurnTime = emu:read8(33700834)
 			--Write speed to 1
 			emu:write16(33700830, 1)
-			if BattleVars[7] == 0 then
+			if BattleVars[7] == 0 and string.len(BattleVars[20]) == 280 and string.len(BattleVars[21]) == 244 then
 				BattleVars[7] = 1
 			--	BattleVars[13] = ReadBuffers()
-				ConsoleForText:print("Second")
-			elseif BattleVars[7] == 1 then
+			-- RECEIVEDATA
+			--	ConsoleForText:print("Second")
+			elseif BattleVars[7] == 1 and EnemyBattleVars[7] == 1 then
+				if BattleVars[12] >= 32 then
+					BattleVars[12] = BattleVars[12] - 32
+					emu:write8(33700808, BattleVars[12])
+				end
 			end
 		end
 	end
@@ -2246,7 +2545,7 @@ function BattlescriptClassic()
 	if BattleVars[1] >= 2 and BattleVars[3] == 1 then LockFromScript = 0 end
 	
 	
-	if SendTimer == 0 then CreatePackettSpecial("BATT") end
+	if SendTimer == 0 then CreatePackettSpecial("BATT", Players[PlayerTalkingID]) end
 end
 
 function WriteBuffers(BufferOffset, BufferVar, Length)
@@ -2318,7 +2617,7 @@ function Tradescript()
 		TradeVars[4] = 1
 		Loadscript(14)
 
---	if TempVar2 == 0 then ConsoleForText:print("1: " .. TradeVars[1] .. " 8001: " .. Var8000[2] .. " OtherPlayerHasCancelled: " .. OtherPlayerHasCancelled .. " EnemyTradeVars[1]: " .. EnemyTradeVars[1]) end
+	--	if TempVar2 == 0 then ConsoleForText:print("1: " .. TradeVars[1] .. " 8001: " .. Var8000[2] .. " OtherPlayerHasCancelled: " .. OtherPlayerHasCancelled .. " EnemyTradeVars[1]: " .. EnemyTradeVars[1]) end
 
 	--Text is finished before trade
 	elseif Var8000[2] ~= 0 and TradeVars[4] == 1 and TradeVars[1] == 0 then
@@ -2333,7 +2632,7 @@ function Tradescript()
 	--You have canceled or have not selected a valid pokemon slot
 	elseif Var8000[2] == 1 and TradeVars[1] == 1 then
 		Loadscript(16)
-		SendData("CTRA")
+		SendData("CTRA",Players[PlayerTalkingID])
 		LockFromScript = 0
 		TradeVars[1] = 0
 		TradeVars[2] = 0
@@ -2387,7 +2686,7 @@ function Tradescript()
 	elseif TradeVars[1] == 3 then
 		--If you decline
 		if Var8000[2] == 1 then
-			SendData("ROFF")
+			SendData("ROFF", Players[PlayerTalkingID])
 			Loadscript(16)
 			LockFromScript = 7
 			TradeVars[1] = 0
@@ -2402,7 +2701,7 @@ function Tradescript()
 			TradeVars[1] = 0
 			TradeVars[2] = 0
 			TradeVars[3] = 0
-			
+	
 		--If you accept and there is no denial
 		elseif Var8000[2] == 2 and OtherPlayerHasCancelled == 0 then
 			--If other player isn't finished selecting, wait. Otherwise, go straight into trade.
@@ -2413,9 +2712,9 @@ function Tradescript()
 				SetEnemyPokemonTeam(TeamPos, 1)
 				Loadscript(17)
 			else
-				TradeVars[2] = 0
 				Loadscript(4)
 				TradeVars[1] = 4
+				TradeVars[2] = 0
 			end
 	end
 	elseif TradeVars[1] == 4 then
@@ -2445,7 +2744,7 @@ function Tradescript()
 		if Var8000[2] == 0 then
 			Loadscript(23)
 		--After trade
-		elseif Var8000[2] ~= 0 then 
+		elseif Var8000[2] ~= 0 then
 			TradeVars[1] = 0
 			TradeVars[2] = 0
 			TradeVars[3] = 0
@@ -2454,14 +2753,20 @@ function Tradescript()
 			EnemyTradeVars[1] = 0
 			EnemyTradeVars[2] = 0
 			EnemyTradeVars[3] = 0
-			EnemyTradeVars[4] = 0
 			EnemyTradeVars[5] = 0
 			LockFromScript = 0
 		end
 	end
 	
-	if SendTimer == 0 then CreatePackettSpecial("TRAD") end
+	if SendTimer == 0 then CreatePackettSpecial("TRAD", Players[PlayerTalkingID]) end
 end
+		--	if Var8000[2] ~= 0 then
+		--		Loadscript(16)
+		--		SendData("CTRA", Player2)
+		--		LockFromScript = 7
+		--		TradeVars[1] = 0
+		--		TradeVars[2] = 0
+		--		TradeVars[3] = 0
 
 function RenderPlayersOnDifferentMap()
 	--if MapChange[1] ~= 0 then console:log("MAP CHANGE PLAYER 1") MapChange[1] = 0 end
@@ -2524,7 +2829,7 @@ function GetPosition()
 		--Addresses for Emerald
 		PlayerXAddress = 33780576
 		PlayerYAddress = 33780578
-		PlayerFaceAddress = 33780584
+		PlayerFaceAddress = 33780588
 		MapAddress = 33799296
 		BikeAddress = 33687100
 		PrevMapIDAddress = 33799298
@@ -2558,35 +2863,77 @@ function GetPosition()
 		
 	CurrentX[PlayerID] = PlayerMapX
 	CurrentY[PlayerID] = PlayerMapY
---	console:log("X: " .. CurrentX[PlayerID])
-	--Male Firered Sprite from 1.0, 1.1, and leafgreen
-	if ((Bike == 160 or Bike == 272) or (Bike == 128 or Bike == 240)) then
-		PlayerExtra2[PlayerID] = 0
-		PlayerExtra3[PlayerID] = 0
-	--	if TempVar2 == 0 then ConsoleForText:print("Male on Foot") end
-	--Male Firered Biking Sprite
-	elseif (Bike == 320 or Bike == 432 or Bike == 288 or Bike == 400) then
-		PlayerExtra2[PlayerID] = 0
-		PlayerExtra3[PlayerID] = 1
-	--	if TempVar2 == 0 then ConsoleForText:print("Male on Bike") end
-	--Male Firered Surfing Sprite
-	elseif (Bike == 624 or Bike == 736 or Bike == 592 or Bike == 704) then
-		PlayerExtra2[PlayerID] = 0
-		PlayerExtra3[PlayerID] = 2
-	--Female sprite
-	elseif ((Bike == 392 or Bike == 504) or (Bike == 360 or Bike == 472)) then
-		PlayerExtra2[PlayerID] = 1
-		PlayerExtra3[PlayerID] = 0
-	--	if TempVar2 == 0 then ConsoleForText:print("Female on Foot") end
-	--Female Biking sprite
-	elseif ((Bike == 552 or Bike == 664) or (Bike == 520 or Bike == 632)) then
-		PlayerExtra2[PlayerID] = 1
-		PlayerExtra3[PlayerID] = 1
-	--	if TempVar2 == 0 then ConsoleForText:print("Female on Bike") end
-	--Female Firered Surfing Sprite
-	elseif (Bike == 720 or Bike == 832 or Bike == 688 or Bike == 800) then
-		PlayerExtra2[PlayerID] = 1
-		PlayerExtra3[PlayerID] = 2
+	--	console:log("X: " .. CurrentX[PlayerID])
+
+	-- Firered/Leafgreen
+		--Male Sprite from 1.0, 1.1, and leafgreen
+		if ((Bike == 160 or Bike == 272) or (Bike == 128 or Bike == 240)) then
+			globalSpriteNo[PlayerID] = 0
+			PlayerExtra3[PlayerID] = 0
+		--	if TempVar2 == 0 then ConsoleForText:print("Male on Foot") end
+
+		--Male Biking Sprite										
+		elseif (Bike == 320 or Bike == 432 or Bike == 288 or Bike == 400) then
+			globalSpriteNo[PlayerID] = 0
+			PlayerExtra3[PlayerID] = 1
+		--	if TempVar2 == 0 then ConsoleForText:print("Male on Bike") end
+
+		--Male Surfing Sprite
+		elseif (Bike == 624 or Bike == 736 or Bike == 592 or Bike == 704) then
+			globalSpriteNo[PlayerID] = 0
+			PlayerExtra3[PlayerID] = 2
+
+		--Female sprite
+		elseif ((Bike == 392 or Bike == 504) or (Bike == 360 or Bike == 472)) then
+			globalSpriteNo[PlayerID] = 1
+			PlayerExtra3[PlayerID] = 0
+		--	if TempVar2 == 0 then ConsoleForText:print("Female on Foot") end
+
+		--Female Biking sprite
+		elseif ((Bike == 552 or Bike == 664) or (Bike == 520 or Bike == 632)) then
+			globalSpriteNo[PlayerID] = 1
+			PlayerExtra3[PlayerID] = 1
+		--	if TempVar2 == 0 then ConsoleForText:print("Female on Bike") end
+
+		--Female Surfing Sprite
+		elseif (Bike == 720 or Bike == 832 or Bike == 688 or Bike == 800) then
+			globalSpriteNo[PlayerID] = 1
+			PlayerExtra3[PlayerID] = 2
+
+	-- Emerald 
+		--Male
+		elseif Bike == 23180 then
+			globalSpriteNo[PlayerID] = 3;
+			PlayerExtra3[PlayerID] = 0;
+
+		--Male Biking
+		elseif Bike == 23324 then
+			globalSpriteNo[PlayerID] = 3;
+			PlayerExtra3[PlayerID] = 1;
+		
+		--Male Surfing
+		elseif Bike == 23612 then
+			globalSpriteNo[PlayerID] = 3;
+			PlayerExtra3[PlayerID] = 2;
+		
+		--Female
+		elseif Bike == 0 then
+			globalSpriteNo[PlayerID] = 4;
+			PlayerExtra3[PlayerID] = 0;
+
+		--Female Biking
+		elseif Bike == 0 then
+			globalSpriteNo[PlayerID] = 4;
+			PlayerExtra3[PlayerID] = 1;
+		
+		--Female Surfing
+		elseif Bike == 0 then
+			globalSpriteNo[PlayerID] = 4;
+			PlayerExtra3[PlayerID] = 2;
+	
+
+
+
 	else
 	--If in bag when connecting will automatically be firered male
 	--	if TempVar2 == 0 then ConsoleForText:print("Bag/Unknown") end
@@ -2720,7 +3067,6 @@ function GetPosition()
 	CurrentFacingDirection[PlayerID] = PlayerDirection
 end
 
-
 function NoPlayersIfScreen()
 	local ScreenData1 = 0
 	local ScreenData3 = 0
@@ -2787,7 +3133,7 @@ function AnimatePlayerMovement(PlayerNo, AnimateID)
 	local AnimationMovementX = FutureX[PlayerNo] - CurrentX[PlayerNo]
 	local AnimationMovementY = FutureY[PlayerNo] - CurrentY[PlayerNo]
 	local Charpic = PlayerNo - 1
-	local SpriteNumber = PlayerExtra2[PlayerNo]
+	local SpriteNumber = globalSpriteNo[PlayerNo]
 			
 	if PlayerAnimationFrame[PlayerNo] < 0 then PlayerAnimationFrame[PlayerNo] = 0 end
 	PlayerAnimationFrame[PlayerNo] = PlayerAnimationFrame[PlayerNo] + 1
@@ -3166,16 +3512,16 @@ function HandleSprites()
 		PlayerChar = i - 1
 		if PlayerID ~= i and PlayerIDNick[i] ~= "None" then
 			--Facing down
-			if PlayerExtra1[i] == 1 then createChars(PlayerChar,3,PlayerExtra2[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			if PlayerExtra1[i] == 1 then createChars(PlayerChar,3,globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
 			
 			--Facing up
-			elseif PlayerExtra1[i] == 2 then createChars(PlayerChar,2,PlayerExtra2[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 2 then createChars(PlayerChar,2,globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
 			
 			--Facing left
-			elseif PlayerExtra1[i] == 3 then createChars(PlayerChar,1,PlayerExtra2[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 3 then createChars(PlayerChar,1,globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
 			
 			--Facing right
-			elseif PlayerExtra1[i] == 4 then createChars(PlayerChar,1,PlayerExtra2[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 4 then createChars(PlayerChar,1,globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
 			
 			--walk down
 			elseif PlayerExtra1[i] == 5 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 1)
@@ -3214,16 +3560,16 @@ function HandleSprites()
 			elseif PlayerExtra1[i] == 16 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 14)
 			
 			--bike face down
-			elseif PlayerExtra1[i] == 17 then createChars(PlayerChar,12,PlayerExtra2[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			elseif PlayerExtra1[i] == 17 then createChars(PlayerChar,12,globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
 			
 			--bike face up
-			elseif PlayerExtra1[i] == 18 then createChars(PlayerChar,11,PlayerExtra2[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 18 then createChars(PlayerChar,11,globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
 			
 			--bike face left
-			elseif PlayerExtra1[i] == 19 then createChars(PlayerChar,10,PlayerExtra2[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 19 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
 			
 			--bike face right
-			elseif PlayerExtra1[i] == 20 then createChars(PlayerChar,10,PlayerExtra2[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 20 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
 			
 			--bike move down
 			elseif PlayerExtra1[i] == 21 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 7)
@@ -3250,16 +3596,16 @@ function HandleSprites()
 			elseif PlayerExtra1[i] == 28 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 15)
 			
 			--bike hit wall down
-			elseif PlayerExtra1[i] == 29 then createChars(PlayerChar,12,PlayerExtra2[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			elseif PlayerExtra1[i] == 29 then createChars(PlayerChar,12,globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
 			
 			--bike hit wall up
-			elseif PlayerExtra1[i] == 30 then createChars(PlayerChar,11,PlayerExtra2[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 30 then createChars(PlayerChar,11,globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
 			
 			--bike hit wall left
-			elseif PlayerExtra1[i] == 31 then createChars(PlayerChar,10,PlayerExtra2[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 31 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
 			
 			--bike hit wall right
-			elseif PlayerExtra1[i] == 32 then createChars(PlayerChar,10,PlayerExtra2[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 32 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
 			
 			--Surfing
 			
@@ -3482,7 +3828,6 @@ function DrawPlayer(PlayerNo)
 		end
 		
 		if not ((FinalMapX > MaxX or FinalMapX < MinX) or (FinalMapY > MaxY or FinalMapY < MinY)) then 
-			
 			if PlayerVis[PlayerNo] == 1 then
 				--Bikes need different vars
 				if PlayerExtra1[PlayerNo] >= 17 and PlayerExtra1[PlayerNo] <= 32 then
@@ -3621,8 +3966,6 @@ function DrawPlayer(PlayerNo)
 				emu:write8(PlayerExtra3Address, 0)
 				emu:write8(PlayerExtra4Address, 0)
 				else
-				--Player default
-				
 				emu:write8(PlayerXAddress, FinalMapX)
 				emu:write8(PlayerYAddress, FinalMapY)
 				emu:write8(PlayerFaceAddress, FacingTemp)
@@ -3648,7 +3991,6 @@ function DrawPlayer(PlayerNo)
 				emu:write8(PlayerExtra4Address, 1)
 				--Add fighting symbol if in battle
 					if PlayerExtra4[PlayerNo] == 1 then
-					--	console:log("PlayerNo: " .. PlayerNo)
 						local SymbolY = FinalMapY - 8
 						local SymbolX = FinalMapX
 						local Charpic = PlayerNo - 1
@@ -3782,7 +4124,7 @@ function ErasePlayer(PlayerNo)
 		local u32 PlayerExtra2Address = 0
 		local u32 PlayerExtra3Address = 0
 		local u32 PlayerExtra4Address = 0
-		if GameID == "BPR1" or GameID == "BPR2" or GameID == "BPEE" then 
+		if GameID == "BPR1" or GameID == "BPR2" or GameID == "BPEE" then
 			--Addresses for Firered
 			Player1Address = 50345200 - ((PlayerNo - 1) * 24)
 			PlayerYAddress = Player1Address
@@ -3846,17 +4188,51 @@ function ErasePlayer(PlayerNo)
 					emu:write8(PlayerExtra4Address, 1)
 end
 
+--Unique for server
 
---Unique for client
+function AddPlayerToConsole(PlayerNumber)
+	local MultiplayerPlayerNumber = PlayerNumber + 1
+	local ConsoleLine = PlayerNumber + 8
+	if MultiplayerConsoleFlags[MultiplayerPlayerNumber] == 0 and PlayerIDNick[PlayerNumber] ~= "None" then
+		ConsoleForText:moveCursor(0,4)
+		MultiplayerConsoleFlags[1] = MultiplayerConsoleFlags[1] + 1
+		ConsoleForText:print("Players found!                                                  ")
+			
+			
+		MultiplayerConsoleFlags[MultiplayerPlayerNumber] = 1
+		ConsoleForText:moveCursor(0,ConsoleLine)
+		ConsoleForText:print("Player " .. PlayerNumber .. ": " .. PlayerIDNick[PlayerNumber]  .. "                            ")
+		
+	end
+end
+
+function RemovePlayerFromConsole(PlayerNumber)
+	local MultiplayerPlayerNumber = PlayerNumber + 1
+	local ConsoleLine = PlayerNumber + 8
+	if MultiplayerConsoleFlags[MultiplayerPlayerNumber] == 1 then
+		MultiplayerConsoleFlags[1] = MultiplayerConsoleFlags[1] - 1
+		if MultiplayerConsoleFlags[1] <= 0 then
+			MultiplayerConsoleFlags[1] = 0
+			ConsoleForText:moveCursor(0,4)
+			ConsoleForText:print("Searching for player...                                                ")
+		end
+		MultiplayerConsoleFlags[MultiplayerPlayerNumber] = 0
+		ConsoleForText:moveCursor(0,ConsoleLine)
+		ConsoleForText:print("                                                                     ")
+		
+	end
+end
+
+
 
 function GetNewGame()
     ClearAllVar()
 	if ConsoleForText == nil then
-		ConsoleForText = console:createBuffer("GBA-PK CLIENT")
+		ConsoleForText = console:createBuffer("GBA-PK SERVER")
 	end
 	ConsoleForText:clear()
 	ConsoleForText:moveCursor(0,0)
-	ConsoleForText:print("A new game has started.")
+	ConsoleForText:print("A new game has started")
 	ConsoleForText:moveCursor(0,1)
 	FFTimer2 = os.time()
 	GetGameVersion()
@@ -4148,7 +4524,7 @@ function ReceiveData()
 						--	Facing = tonumber(ReceiveDataSmall[11])
 							--Action type -> can be walk or run
 							PlayerExtra1[1] = ReceiveDataSmall[10]
-							PlayerExtra2[1] = ReceiveDataSmall[11]
+							globalSpriteNo[1] = ReceiveDataSmall[11]
 							PlayerExtra3[1] = ReceiveDataSmall[12]
 							PlayerExtra4[1] = ReceiveDataSmall[13]
 						end
@@ -4172,7 +4548,7 @@ function ReceiveData()
 									FutureX[RECEIVEDID] = ReceiveDataSmall[7]
 									FutureY[RECEIVEDID] = ReceiveDataSmall[8]
 									PlayerExtra1[RECEIVEDID] = ReceiveDataSmall[10]
-									PlayerExtra2[RECEIVEDID] = ReceiveDataSmall[11]
+									globalSpriteNo[RECEIVEDID] = ReceiveDataSmall[11]
 									PlayerExtra3[RECEIVEDID] = ReceiveDataSmall[12]
 									PlayerExtra4[RECEIVEDID] = ReceiveDataSmall[13]
 									StartX[RECEIVEDID] = ReceiveDataSmall[18]
@@ -4231,7 +4607,7 @@ end
 --Send Data to clients
 function CreatePackett(RequestTemp, PackettTemp)
 	local FillerStuff = "F"
-	Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. PackettTemp .. CurrentX[PlayerID] .. CurrentY[PlayerID] .. Facing2[PlayerID] .. PlayerExtra1[PlayerID] .. PlayerExtra2[PlayerID] .. PlayerExtra3[PlayerID] .. PlayerExtra4[PlayerID] .. PlayerMapID .. PlayerMapIDPrev .. PlayerMapEntranceType .. StartX[PlayerID] .. StartY[PlayerID] .. FillerStuff .. "U"
+	Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. PackettTemp .. CurrentX[PlayerID] .. CurrentY[PlayerID] .. Facing2[PlayerID] .. PlayerExtra1[PlayerID] .. globalSpriteNo[PlayerID] .. PlayerExtra3[PlayerID] .. PlayerExtra4[PlayerID] .. PlayerMapID .. PlayerMapIDPrev .. PlayerMapEntranceType .. StartX[PlayerID] .. StartY[PlayerID] .. FillerStuff .. "U"
 end
 
 function SendData(DataType, ExtraData)
