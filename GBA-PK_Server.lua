@@ -6,6 +6,11 @@ local Nickname = ""
 
 
 local GameID = ""
+local RegionID
+	local KantoRegionID = 0
+	local HoennRegionID = 1
+
+
 local GameCode = "None"
 local ConfirmPackett = 0
 local EnableScript = false
@@ -63,7 +68,7 @@ local FutureFacingDirection = {0,0,0,0,0,0,0,0}
 local CurrentMapID = {0,0,0,0,0,0,0,0}
 local PreviousMapID = {0,0,0,0,0,0,0,0}
 local MapEntranceType = {1,1,1,1,1,1,1,1}
-local PlayerExtra1 = {0,0,0,0,0,0,0,0}
+local PlayerExtra1 = {0,0,0,0,0,0,0,0}			--When utilizing this value, we subtract 100, use it, and then add 100 again afterwards.  It seems like it is always stored +100
 local globalSpriteNo = {0,0,0,0,0,0,0,0}
 local PlayerExtra3 = {0,0,0,0,0,0,0,0}
 local PlayerExtra4 = {0,0,0,0,0,0,0,0}
@@ -72,11 +77,14 @@ local Facing2 = {0,0,0,0,0,0,0,0}
 local MapID = {0,0,0,0,0,0,0,0}
 local PrevMapID = {0,0,0,0,0,0,0,0}
 local MapChange = {0,0,0,0,0,0,0,0}
+local HoennSurfBool = {1,1,1,1,0,0,0,0}	-- add to networking, plus a settings menu
+local SurfBobAnimationY = {0,0,0,0,0,0,0,0}
 local HasErasedPlayer = {false,false,false,false,false,false,false,false}
+
 --Animation frames
-local PlayerAnimationFrame = {0,0,0,0,0,0,0,0}
-local PlayerAnimationFrame2 = {0,0,0,0,0,0,0,0}
-local PlayerAnimationFrameMax = {0,0,0,0,0,0,0,0}
+local PlayerAnimationFrameTimer = {0,0,0,0,0,0,0,0}
+local PlayerAnimationFlag = {0,0,0,0,0,0,0,0}
+local PlayerAnimationFrameTimerMax = {0,0,0,0,0,0,0,0}
 local PreviousPlayerAnimation = {0,0,0,0,0,0,0,0}
 
 --PLAYER VARS
@@ -150,9 +158,13 @@ local debugBool = false
 
 --Constants
 	--SpriteIDs
-	FR_M_SpriteID = 0
-	FR_F_SpriteID = 1
-	BattleIconID = 2
+	FR_M_SpriteID = 1
+	FR_F_SpriteID = 0
+	EM_M_SpriteID = 2
+	EM_F_SpriteID = 3
+	BattleIconID = 10
+	KantoSurfBlobSpriteID = 11
+	HoennSurfBlobSpriteID = 12
 
 	--FrameIDs
 	FaceSideID = 1
@@ -173,24 +185,61 @@ local debugBool = false
 	BikeUp2ID = 16
 	BikeDown1ID = 17
 	BikeDown2ID = 18
+	RunFaceSideID = 19
+	RunSide1ID = 20
+	RunSide2ID = 21
+	RunFaceUpID = 22
+	RunUp1ID = 23
+	RunUp2ID = 24
+	RunFaceDownID = 25
+	RunDown1ID = 26
+	RunDown2ID = 27
+	SurfDown1ID = 28
+	SurfUp1ID = 29
+	SurfSide1ID = 30
+	SurfDown2ID = 31
+	SurfUp2ID = 32
+	SurfSide2ID = 33
+	SitFaceDownID = 34
+	SitFaceUpID = 35
+	SitFaceSideID = 36
 
 	--AnimationIDs
-	StillAnimID = 0
+	-- AnimID 0 is unused
 	WalkDownAnimID = 1
-	--2 = Walking Up
-	--3 = Walking Left/Right
-	--4 = Running Down
-	--5 = Running Up
-	--6 = Running Left/Right
-	--7 = Bike Down
-	--8 = Bike Up
-	--9 = Bike left/right
-	--10 = Face down
-	--11 = Face up
-	--12 = Face left/right
+	WalkUpAnimID = 2
+	WalkSideAnimID = 3
+	RunDownAnimID = 4
+	RunUpAnimID = 5
+	RunSideAnimID = 6
+	BikeDownAnimID = 7
+	BikeUpAnimID = 8
+	BikeSideAnimID = 9
+	TurnDownAnimID = 10
+	TurnUpAnimID = 11
+	TurnSideAnimID = 12
+	WalkRightAnimID = 13
+	RunRightAnimID = 14
+	BikeRightAnimID = 15
+	-- AnimID 16 is unused
+	SurfTurnDownAnimID = 17
+	SurfTurnUpAnimID = 18
+	SurfTurnLeftAnimID = 19
+	SurfTurnRightAnimID = 20
+	SurfDownAnimID = 21
+	SurfUpAnimID = 22
+	SurfLeftAnimID = 23
+	SurfRightAnimID = 24
 
+	--CurrentFacingDirectionIDs
+	LeftDirID = 1
+	RightDirID = 2
+	UpDirID = 3
+	DownDirID = 4
 
-
+	--Facing2IDs
+	FaceLeftID = 0
+	FaceRightID = 1
 
 local FR_M_Sprites = {
 	--1 Facing Left
@@ -274,23 +323,6 @@ local FR_M_Sprites = {
 	--27 Run Side Down Cycle 2
 	{0, 2290614272, 3149692928, 3149627392, 0, 0, 0, 0, 0, 34952, 576443, 572347, 3149645952, 3149647640, 3149713176, 2899083760, 3402298352, 2576764672, 1717780224, 790884352, 9223099, 16563131, 16567227, 253283530, 255831212, 16017817, 15939174, 996082, 860876800, 4294766592, 2865164288, 2406416384, 2281635840, 2867855360, 4278190080, 0, 1045555, 1009407, 61832, 65314, 3891, 255, 0, 0},
 
-	--28 Surf down idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 1717986918, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1718265455, 1722459897, 1722808576, 4285071360, 0, 0, 0, 0, 4134184550, 2674567782, 10484326, 38655, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-
-	--29 Surf up idle Cycle 1   
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 1717986918, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1717986927, 1717987065, 1718615952, 2583064320, 9857280, 626688, 0, 0, 4133906022, 2674288230, 167769702, 16150425, 9857280, 626688, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	
-	--30 Surf side idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 1718025984, 0, 0, 0, 0, 0, 0, 4095, 1046118, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4026531840, 2415919104, 2415919104, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004399, 1718004399, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 4133906022, 0, 255, 4095, 4095, 2559, 159, 255, 3942, 0, 0, 0, 0, 0, 0, 0, 0, 1717988089, 1718024592, 4294545408, 2566914048, 0, 0, 0, 0, 4284900966, 2577360486, 630783, 153, 0, 0, 0, 0, 40806, 2415, 153, 0, 0, 0, 0, 0},
-	
-	--31 Surf down idle Cycle 2
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2415919104, 4177526784, 4186963968, 4278190080, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 255, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 0, 0, 0, 0, 0, 9, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1718265593, 1722460569, 1869191424, 0, 0, 0, 0, 1717986918, 2674566758, 2577050214, 10065654, 0, 0, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
-	
-	--32 Surf up idle Cycle 2	
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4177526784, 4186963968, 4278190080, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 255, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 0, 0, 0, 0, 0, 0, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1717986927, 1717987065, 4194303897, 2576771472, 10066176, 0, 0, 1717986918, 4133906022, 2674288230, 2583691167, 160852377, 10066176, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
-
-	--33 Surf side idle Cycle 2
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 0, 0, 0, 0, 0, 0, 0, 4095, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4177526784, 2566914048, 1718025984, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004390, 1046118, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 0, 0, 255, 4095, 40959, 2463, 159, 255, 2415919104, 0, 0, 0, 0, 0, 0, 0, 1718004393, 1718024601, 1869191568, 2576941056, 0, 0, 0, 0, 4133906022, 1777755750, 2426011503, 629145, 0, 0, 0, 0, 40806, 39270, 2457, 0, 0, 0, 0, 0},
 	--34 Surf sit down
 	{0, 0, 0, 0, 0, 2290614272, 3149692928, 3149627392, 3149645824, 0, 0, 0, 0, 34952, 576443, 572347, 9223099, 3149713152, 2630668032, 3402269168, 2576806896, 1717784320, 790839040, 607338496, 860843776, 16567227, 16567497, 253275308, 255814041, 16004710, 15938290, 275266, 16184371, 4291781184, 2898670400, 4135056384, 2137452544, 4284936192, 16711680, 0, 0, 69663999, 70479050, 5207919, 1009399, 1009407, 65280, 0, 0},
 	
@@ -299,9 +331,8 @@ local FR_M_Sprites = {
 	
 	--36 Surf sit side
 	{0, 0, 0, 0, 0, 2290089984, 3150446592, 3149692928, 3149498368, 0, 0, 0, 0, 559240, 9223099, 9157563, 147569595, 3150547440, 3435842032, 3435964912, 3433737984, 2290499584, 1060323328, 606339072, 859832320, 147635131, 147639500, 260885708, 256412876, 256133256, 16003651, 995891, 16663619, 1156579328, 4244631552, 2406444800, 4160515840, 4143378432, 268369920, 0, 0, 266201316, 256764159, 266637158, 16711526, 1048371, 136, 0, 0}
-}
 
---down facing male bike {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2290614272, 3149692928, 3149627392, 3149645824, 3149713152, 0, 0, 0, 34952, 576443, 572347, 9223099, 16567227, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2630668032, 3402269168, 2576806896, 1717784320, 790839040, 607342336, 860843776, 4284690176, 16567497, 253275308, 255814041, 16004710, 15938290, 16003906, 16184371, 15873791, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2858630912, 3488890880, 4294963200, 1827667968, 2901409792, 1862270976, 1610612736, 4026531840, 15939242, 282620, 1048575, 4047, 4047, 255, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0}
+}
 
 local FR_F_Sprites = {
 	{ 1717960704, 2577031168, 2576965632, 2576983552, 0, 0, 0, 0, 26214, 436633, 432537, 16423321, 2577049952, 2863442272, 3435833696, 2863310336, 1717986304, 1140012032, 1111638016, 4080271360, 262842777, 262851242, 4110068940, 4282821290, 4047791718, 256132164, 256119169, 256132340, 4134404096, 645267456, 685244416, 954728448, 1323302912, 3404726272, 4278190080, 0, 256132340, 16008271, 1048562, 3907, 4068, 250, 15, 0},
@@ -384,32 +415,35 @@ local FR_F_Sprites = {
 	--27 Run Side Down Cycle 2
 	{4293918720, 1718022144, 2577035008, 2576969472, 0, 0, 0, 0, 4095, 1009254, 16165273, 16161177, 2576983552, 2576984416, 3113920864, 2896996704, 3435833072, 2577035071, 1718567999, 791937008, 6986137, 110795161, 110799259, 110807754, 258649292, 16165273, 256177766, 16724978, 860880640, 4294766592, 1724706816, 4241424384, 2414870528, 2867855360, 4278190080, 0, 1045555, 1019903, 1016644, 1037346, 65331, 255, 0, 0},
 
-	--28 Surf down idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 1717986918, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1718265455, 1722459897, 1722808576, 4285071360, 0, 0, 0, 0, 4134184550, 2674567782, 10484326, 38655, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-
-	--29 Surf up idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 1717986918, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1717986927, 1717987065, 1718615952, 2583064320, 9857280, 626688, 0, 0, 4133906022, 2674288230, 167769702, 16150425, 9857280, 626688, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-
-	--30 Surf side idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 1718025984, 0, 0, 0, 0, 0, 0, 4095, 1046118, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4026531840, 2415919104, 2415919104, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004399, 1718004399, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 4133906022, 0, 255, 4095, 4095, 2559, 159, 255, 3942, 0, 0, 0, 0, 0, 0, 0, 0, 1717988089, 1718024592, 4294545408, 2566914048, 0, 0, 0, 0, 4284900966, 2577360486, 630783, 153, 0, 0, 0, 0, 40806, 2415, 153, 0, 0, 0, 0, 0},
-
-	--31 Surf down idle Cycle 2
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2415919104, 4177526784, 4186963968, 4278190080, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 255, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 0, 0, 0, 0, 0, 9, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1718265593, 1722460569, 1869191424, 0, 0, 0, 0, 1717986918, 2674566758, 2577050214, 10065654, 0, 0, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
-
-	--32 Surf up idle Cycle 2
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4177526784, 4186963968, 4278190080, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 255, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 0, 0, 0, 0, 0, 0, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1717986927, 1717987065, 4194303897, 2576771472, 10066176, 0, 0, 1717986918, 4133906022, 2674288230, 2583691167, 160852377, 10066176, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
-
-	--33 Surf side idle Cycle 2
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 0, 0, 0, 0, 0, 0, 0, 4095, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4177526784, 2566914048, 1718025984, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004390, 1046118, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 0, 0, 255, 4095, 40959, 2463, 159, 255, 2415919104, 0, 0, 0, 0, 0, 0, 0, 1718004393, 1718024601, 1869191568, 2576941056, 0, 0, 0, 0, 4133906022, 1777755750, 2426011503, 629145, 0, 0, 0, 0, 40806, 39270, 2457, 0, 0, 0, 0, 0},
-
-	--34 Surf sit down
+	--28 Surf sit down
 	{0, 0, 0, 0, 0, 1717960704, 2577031168, 2576965632, 2576983552, 0, 0, 0, 0, 26214, 436633, 432537, 6986137, 3113920864, 2896996704, 3435835376, 2577035072, 1717847280, 790843376, 607384816, 860878064, 110799259, 110807754, 258649292, 83274137, 256132710, 267662066, 256848706, 256898099, 4293869360, 3981899328, 3865887552, 4205367040, 4205375488, 267386880, 0, 0, 15987967, 74409302, 71091822, 16550575, 1018543, 4080, 0, 0},
 
-	--35 Surf sit up
+	--29 Surf sit up
 	{0, 0, 0, 0, 0, 1717960704, 2577031168, 2576965632, 2576983552, 0, 0, 0, 0, 26214, 436633, 432537, 6986137, 2577049952, 2863442272, 3435832896, 2863293680, 1717653488, 286343664, 286543616, 289689344, 110799257, 110807722, 74099916, 256289450, 267654758, 252973329, 16007441, 16008209, 1145372416, 1145369584, 4283417584, 1726930688, 3439259392, 4279234560, 0, 0, 16729156, 255804484, 255653119, 16764006, 65484, 255, 0, 0},
 
-	--36 Surf sit side
+	--30 Surf sit side
 	{0, 0, 0, 0, 0, 1717960704, 2577031168, 2576965632, 2576983552, 0, 0, 0, 0, 26214, 436633, 432537, 16423321, 2577049952, 2863442272, 3435833696, 2863310336, 1717986304, 1140012032, 1111638016, 4080271360, 262842777, 262851242, 4110068940, 4282821290, 4047791718, 256132164, 256119169, 256132340, 4134404096, 1744826368, 1869590272, 2186063616, 2202726400, 268369920, 0, 0, 256132340, 16008271, 1046770, 1044274, 63539, 68, 0, 0}
+
+}
+
+local Kanto_Surf_Sprites = {
+	--28 Surf down Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 1717986918, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1718265455, 1722459897, 1722808576, 4285071360, 0, 0, 0, 0, 4134184550, 2674567782, 10484326, 38655, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	
+	--29 Surf up Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4177526784, 4177526784, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 1717986918, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 1717986918, 0, 0, 0, 0, 0, 15, 159, 159, 0, 0, 0, 0, 0, 0, 0, 0, 1717986927, 1717987065, 1718615952, 2583064320, 9857280, 626688, 0, 0, 4133906022, 2674288230, 167769702, 16150425, 9857280, 626688, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	
+	--30 Surf side Cycle 1
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 1718025984, 0, 0, 0, 0, 0, 0, 4095, 1046118, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4026531840, 2415919104, 2415919104, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004399, 1718004399, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 4133906022, 0, 255, 4095, 4095, 2559, 159, 255, 3942, 0, 0, 0, 0, 0, 0, 0, 0, 1717988089, 1718024592, 4294545408, 2566914048, 0, 0, 0, 0, 4284900966, 2577360486, 630783, 153, 0, 0, 0, 0, 40806, 2415, 153, 0, 0, 0, 0, 0},
+
+	--31 Surf down Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2415919104, 4177526784, 4186963968, 4278190080, 1727987712, 2003201792, 2004248304, 2004248175, 2003199599, 1717986918, 1717986918, 255, 65382, 16148087, 258369399, 4133906295, 4133906039, 1717986918, 1717986918, 0, 0, 0, 0, 0, 9, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1718265593, 1722460569, 1869191424, 0, 0, 0, 0, 1717986918, 2674566758, 2577050214, 10065654, 0, 0, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
+
+	--32 Surf up Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4177526784, 4186963968, 4278190080, 2013200384, 2004250368, 2004248304, 2003199599, 1717986927, 1717986918, 1717986918, 255, 65399, 16148343, 258369399, 4133906039, 4133906022, 1717986918, 1717986918, 0, 0, 0, 0, 0, 0, 159, 2463, 2576351232, 2566914048, 0, 0, 0, 0, 0, 0, 1717986918, 1717986927, 1717987065, 4194303897, 2576771472, 10066176, 0, 0, 1717986918, 4133906022, 2674288230, 2583691167, 160852377, 10066176, 0, 0, 2457, 153, 0, 0, 0, 0, 0, 0},
+	
+	--33 Surf side Cycle 2
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4293918720, 0, 0, 0, 0, 0, 0, 0, 4095, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4177526784, 2566914048, 1718025984, 2003199728, 2004248175, 2004248175, 2003199590, 1717986918, 1717987942, 1718004390, 1046118, 267806311, 4133906039, 4133906039, 1717986919, 1717986918, 1717986918, 1717986918, 0, 0, 255, 4095, 40959, 2463, 159, 255, 2415919104, 0, 0, 0, 0, 0, 0, 0, 1718004393, 1718024601, 1869191568, 2576941056, 0, 0, 0, 0, 4133906022, 1777755750, 2426011503, 629145, 0, 0, 0, 0, 40806, 39270, 2457, 0, 0, 0, 0, 0}
 }
 
 local TEMPLATE = {
@@ -463,26 +497,9 @@ local TEMPLATE = {
 	--26 Run Side Down Cycle 1
 	
 	--27 Run Side Down Cycle 2
-
-	--28 Surf down idle Cycle 1
-
-	--29 Surf up idle Cycle 1   
-	
-	--30 Surf side idle Cycle 1
-	
-	--31 Surf down idle Cycle 2
-	
-	--32 Surf up idle Cycle 2	
-
-	--33 Surf side idle Cycle 2
-	--34 Surf sit down
-	
-	--35 Surf sit up
-	
-	--36 Surf sit side
 }
 
-local EM_Green_Male_Sprites = {
+local EM_M_Sprites = {
 	--1 Facing Left
 	{1431306240, 2665828352, 4008334592, 2595153920, 0, 0, 1280, 24144, 24293, 5609881, 93952494, 1503238553, 2863328000, 3149640704, 2165388288, 830542848, 847320064, 858996736, 860094464, 1145044992, 100244410, 16353467, 16287880, 16287887, 1045295, 1000227, 63539, 1030980, 4174643200, 3481534464, 3750690816, 4293918720, 4293918720, 2296315904, 4293918720, 0, 16403343, 16496892, 1032189, 65535, 4095, 3915, 255, 0},
 	
@@ -563,12 +580,15 @@ local EM_Green_Male_Sprites = {
 	
 	--27 Run Down Cycle 2
 	{0, 0, 1431306240, 2665807872, 0, 0, 0, 0, 1280, 24144, 351973, 5872025, 4008595456, 4008640496, 2862268351, 2929442751, 4004217664, 303121216, 673395712, 674447360, 367086, 16751086, 16492970, 16497130, 70826734, 70521121, 4403842, 275330, 860876800, 3632852992, 2296315904, 4294443008, 3688824832, 1718550528, 4293918720, 0, 1045555, 589709, 1047759, 64735, 4095, 15, 0, 0},
-	
-	--28 Surf down idle Cycle 1
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 1459552256, 1431764736, 1431656176, 0, 0, 0, 0, 255, 65381, 16737621, 258299221, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4127195136, 4278190080, 4127195136, 4294311936, 4294901760, 1431655791, 1431655775, 1431655766, 1431655765, 1431655766, 1431655775, 1431655791, 1431655935, 4283782485, 4116010325, 1700091221, 1431655765, 1700091221, 4116010325, 4132787541, 4283782485, 0, 15, 15, 111, 255, 111, 28671, 65535, 4293918720, 4127195136, 4026531840, 0, 0, 0, 0, 0, 1431662591, 1433403391, 4294967295, 4294967286, 4294967136, 4294926336, 4278190080, 0, 4294333781, 4294964821, 4294967295, 1879048191, 117440511, 458751, 255, 0, 4095, 111, 6, 0, 0, 0, 0, 0},
 
+	--34 Surf Sit Down
+	{0, 0, 0, 0, 0, 0, 1431306240, 2665807872, 4008595456, 0, 0, 0, 1280, 24144, 351973, 5872025, 367086, 4008640256, 2862333696, 2929442560, 4005294912, 303121216, 673395712, 674447360, 860876800, 16751086, 16497066, 16497130, 71023598, 70521121, 4403842, 275330, 1045555, 4287119104, 3633302592, 2295651648, 2231369472, 1332146176, 4284936192, 16711680, 0, 15960319, 80541837, 148721032, 9437000, 1009396, 1009407, 65280, 0},
+	
+	--35 Surf sit up
+	{0, 0, 0, 0, 0, 1441071104, 4008005632, 4008613120, 4008267776, 0, 0, 0, 0, 0, 1365, 24302, 368366, 4003045120, 2576981760, 2576977664, 2575926080, 2559066944, 4294128640, 573784064, 1155526656, 16357870, 16357785, 16292249, 71276697, 70551689, 4407295, 275234, 1047876, 4287115008, 3959393344, 2857360704, 1146093312, 3153653760, 4177461248, 4278190080, 0, 15894783, 80281534, 148763818, 16774212, 1019835, 65423, 255, 0},
+	
 	--36 Surf sit side
-	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1717567488, 4294336512, 1718615808, 1431660287, 0, 0, 0, 0, 0, 0, 28671, 7337573, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 1862270976, 1877999616, 1609564160, 1610547200, 1878982656, 1878982656, 4294901760, 1431655766, 1431655765, 1431655765, 1431655765, 1431655765, 1431655765, 1431655765, 1431655766, 116806997, 1868911957, 1868911957, 4283782485, 4283782485, 4284831061, 4284831061, 4294333781, 0, 0, 0, 6, 6, 111, 111, 111, 4293918720, 4293918720, 4278190080, 4026531840, 0, 0, 0, 0, 1431660287, 1718616063, 4294967295, 4294967295, 4294967295, 4294927872, 4294311936, 1711276032, 4294964837, 4294967295, 1879048191, 117440511, 458751, 1647, 15, 15, 6, 6, 0, 0, 0, 0, 0, 0}
+	{0, 0, 0, 0, 0, 0, 1426063360, 3998547968, 4004884480, 0, 0, 0, 20480, 386304, 388693, 89758105, 1503239918, 2867757056, 2863570944, 3149611008, 286474240, 403783680, 674447360, 859045888, 876609536, 2576980377, 1603910586, 261655483, 260606095, 260606194, 16724722, 16003891, 16315187, 1073741824, 3741323008, 1341191408, 4285528304, 4287618816, 4294471424, 4283166720, 16711680, 263947336, 4199281293, 4223173256, 264209480, 16748532, 1047759, 64991, 4080}
 }
 
 local EM_Green_Female_Sprites = {
@@ -640,25 +660,19 @@ local EM_Green_Female_Sprites = {
 
 	--27 Run Side Down Cycle 2
 	{8912896, 146505728, 1488683008, 2857926656, 0, 0, 0, 0, 34816, 572288, 572293, 558506, 2863366144, 2863222528, 4002904048, 1212622719, 2189980799, 2165868680, 404953088, 673513216, 107519658, 1777635054, 1870100974, 4151473284, 4148660263, 143163668, 8467073, 16728706, 860848128, 1760788480, 4277137408, 4187947008, 4293918720, 4026531840, 0, 0, 1045555, 1005702, 1037789, 36198, 4044, 3908, 255, 0},
-
-	--28 Surf down idle Cycle 1
-
-	--29 Surf up idle Cycle 1   
-	
-	--30 Surf side idle Cycle 1
-	
-	--31 Surf down idle Cycle 2
-	
-	--32 Surf up idle Cycle 2	
-
-	--33 Surf side idle Cycle 2
-	--34 Surf sit down
-	
-	--35 Surf sit up
-	
-	--36 Surf sit side
 }
 
+local Hoenn_Surf_Sprites = {
+	--down
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4278190080, 1459552256, 1431764736, 1431656176, 0, 0, 0, 0, 255, 65381, 16737621, 258299221, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 4026531840, 4127195136, 4278190080, 4127195136, 4294311936, 4294901760, 1431655791, 1431655775, 1431655766, 1431655765, 1431655766, 1431655775, 1431655791, 1431655935, 4283782485, 4116010325, 1700091221, 1431655765, 1700091221, 4116010325, 4132787541, 4283782485, 0, 15, 15, 111, 255, 111, 28671, 65535, 4293918720, 4127195136, 4026531840, 0, 0, 0, 0, 0, 1431662591, 1433403391, 4294967295, 4294967286, 4294967136, 4294926336, 4278190080, 0, 4294333781, 4294964821, 4294967295, 1879048191, 117440511, 458751, 255, 0, 4095, 111, 6, 0, 0, 0, 0, 0},
+
+	--up
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1610612736, 0, 0, 0, 4278190080, 1450139648, 1431764832, 1431656182, 1431655791, 0, 0, 0, 255, 456293, 117400917, 1868911957, 4132787541, 0, 0, 0, 0, 0, 0, 0, 6, 4127195136, 4284481536, 4294901760, 4294963200, 4294926336, 4294311936, 4127195136, 4127195136, 1431655775, 1431655766, 1431655765, 1431655766, 1431655775, 1431655791, 1431655935, 1431662591, 4116010325, 1700091221, 1431655765, 1700091221, 4116010325, 4132787541, 4283782485, 4294333781, 111, 1791, 65535, 1048575, 458751, 28671, 111, 111, 1610612736, 1610612736, 0, 0, 0, 0, 0, 0, 1433403391, 4294967295, 4294967286, 4294964736, 4294901760, 4278190080, 0, 0, 4294964821, 4294967295, 268435455, 7340031, 28671, 255, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0},
+
+	--side
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1717567488, 4294336512, 1718615808, 1431660287, 0, 0, 0, 0, 0, 0, 28671, 7337573, 0, 0, 0, 0, 0, 0, 0, 0, 4026531840, 1862270976, 1877999616, 1609564160, 1610547200, 1878982656, 1878982656, 4294901760, 1431655766, 1431655765, 1431655765, 1431655765, 1431655765, 1431655765, 1431655765, 1431655766, 116806997, 1868911957, 1868911957, 4283782485, 4283782485, 4284831061, 4284831061, 4294333781, 0, 0, 0, 6, 6, 111, 111, 111, 4293918720, 4293918720, 4278190080, 4026531840, 0, 0, 0, 0, 1431660287, 1718616063, 4294967295, 4294967295, 4294967295, 4294927872, 4294311936, 1711276032, 4294964837, 4294967295, 1879048191, 117440511, 458751, 1647, 15, 15, 6, 6, 0, 0, 0, 0, 0, 0}
+
+}
 
 function ClearAllVar()
 	local MultFlags = 0
@@ -710,6 +724,7 @@ function GetGameVersion()
 			EnableScript = true
 			GameID = "BPR1"
 		end
+		RegionID = KantoRegionID
 	elseif (GameCode == "AGB-BPGE")
 		then
 		local GameVersion = emu:read16(134217916)
@@ -726,21 +741,22 @@ function GetGameVersion()
 			EnableScript = true
 			GameID = "BPG1"
 		end
-	elseif (GameCode == "AGB-BPEE")
-		then
+		RegionID = KantoRegionID
+	elseif (GameCode == "AGB-BPEE") then
 			ConsoleForText:print("Pokemon Emerald detected. Script disabled.")
 			EnableScript = true
 			GameID = "BPEE"
-	elseif (GameCode == "AGB-AXVE")
-		then
+			RegionID = HoennRegionID
+	elseif (GameCode == "AGB-AXVE") then
 			ConsoleForText:print("Pokemon Ruby detected. Script disabled.")
 			EnableScript = true
 			GameID = "AXVE"
-	elseif (GameCode == "AGB-AXPE")
-		then
+			RegionID = HoennRegionID
+	elseif (GameCode == "AGB-AXPE") then
 			ConsoleForText:print("Pokemon Sapphire detected. Script disabled.")
 			EnableScript = true
 			GameID = "AXPE"
+			RegionID = HoennRegionID
 	else
 		ConsoleForText:print("Unknown game. Script disabled.")
 		EnableScript = false
@@ -754,10 +770,10 @@ end
 
 -- Update 6/22/2024 from Tate:
 -- No need to be sorry! It was only 6 hours of my life to get it shrunk down!
+
 -- 6/25/2024 3:20am from Tate:
 -- I take it back, I am in great distress.
 function createChars(StartAddressNo, FrameID, SpriteNo, IsBiking)
-	local Chardata = 0
 	--0 = Tile 190, 1 = Tile 185, etc...
 	--Tile number 190 = Player1
 	--Tile number 185 = Player2
@@ -774,7 +790,7 @@ function createChars(StartAddressNo, FrameID, SpriteNo, IsBiking)
 	--Character Sprites
 	if SpriteNo ~= BattleIconID then
 		--ConsoleForText:print("FrameID in DrawChar: " .. FrameID .. string.char(10)) -- debug
-		if FrameID < 10 then
+		if FrameID < 10 or (FrameID >= 19 and FrameID <= 27) then
 			SpriteTempVar0 = ActualAddress
 
 		elseif FrameID >= 10 and FrameID <= 18 then
@@ -784,41 +800,71 @@ function createChars(StartAddressNo, FrameID, SpriteNo, IsBiking)
 		elseif FrameID >= 28 and FrameID <= 33 then
 			--Skip 2 tiles, aka put in 3rd and 4th tiles to fit sit char
 			SpriteTempVar0 = ActualAddress + 512
+			FrameID = FrameID - 27	--Adjustment needed for when I created a new table for the surf blob sprites
 			
 		elseif FrameID >= 34 and FrameID <= 36 then
 			SpriteTempVar0 = ActualAddress - 20
+			FrameID = FrameID - 6	--Adjustment needed for when I removed the surf blob sprites from each spritesheet
 
 		else ConsoleForText:print("Bad FrameID in DrawChar")		--debug
 
 		end
 
 		--Firered Male Sprite
-		if SpriteNo == 0 then
+		if SpriteNo == FR_M_SpriteID then
 			for i = 1, #FR_M_Sprites[FrameID] do
 				SpriteTempVar1 = FR_M_Sprites[FrameID][i]
 				emu:write32(SpriteTempVar0, SpriteTempVar1) 
 				SpriteTempVar0 = SpriteTempVar0 + 4
 			end
 		--Firered Female Sprite
-		elseif SpriteNo == 1 then
+		elseif SpriteNo == FR_F_SpriteID then
 			for i = 1, #FR_F_Sprites[FrameID] do
 				SpriteTempVar1 = FR_F_Sprites[FrameID][i]
 				emu:write32(SpriteTempVar0, SpriteTempVar1) 
 				SpriteTempVar0 = SpriteTempVar0 + 4
 			end
 		--Emerald Male Sprite
-		elseif SpriteNo == 3 then
-			for i = 1, #EM_Green_Male_Sprites[FrameID] do
-				SpriteTempVar1 = EM_Green_Male_Sprites[FrameID][i]
+		elseif SpriteNo == EM_M_SpriteID then
+			for i = 1, #EM_M_Sprites[FrameID] do
+				SpriteTempVar1 = EM_M_Sprites[FrameID][i]
 				emu:write32(SpriteTempVar0, SpriteTempVar1) 
 				SpriteTempVar0 = SpriteTempVar0 + 4
 			end
-		elseif SpriteNo == 4 then
+		--Emerald Female Sprite
+		elseif SpriteNo == EM_F_SpriteID then
 			for i = 1, #EM_Green_Female_Sprites[FrameID] do
 				SpriteTempVar1 = EM_Green_Female_Sprites[FrameID][i]
 				emu:write32(SpriteTempVar0, SpriteTempVar1) 
 				SpriteTempVar0 = SpriteTempVar0 + 4
 			end
+		-- Kanto Surf Blob
+		elseif SpriteNo == KantoSurfBlobSpriteID then
+			for i = 1, #Kanto_Surf_Sprites[FrameID] do
+				emu:write32(SpriteTempVar0, Kanto_Surf_Sprites[FrameID][i])
+				SpriteTempVar0 = SpriteTempVar0 + 4
+			end
+		-- Hoenn Surf Blob
+		elseif SpriteNo == HoennSurfBlobSpriteID then
+			--need to use FrameID (which is from 1 to 6) to indicate regular sprite (1-3) and down sprite (4-6)
+			--if (FrameID > 3) then
+			--	for i = 1, 32 do
+			--		emu:write32(SpriteTempVar0, 0)
+			--		SpriteTempVar0 = SpriteTempVar0 + 4
+			--	end
+			--end
+
+			-- Collapses FrameID from 1-6 to 1-3 by mod 3ing it
+			FrameID = FrameID % 3
+			if FrameID == 0 then FrameID = 3 end
+			SpriteTempVar0 = SpriteTempVar0 + 16
+			for i = 9, #Hoenn_Surf_Sprites[FrameID] do
+				emu:write32(SpriteTempVar0, Hoenn_Surf_Sprites[FrameID][i])
+				SpriteTempVar0 = SpriteTempVar0 + 4
+			end
+
+
+
 		else ConsoleForText:print("Bad SpriteNo in DrawChar")		--debug
 		end
 	--Gender Neutral Sprites
@@ -1027,7 +1073,7 @@ function Loadscript(ScriptNo)
 	local Buffer2 = 33692912
 	local Buffer3 = 33692932
 	local MultichoiceAdr = 0
-		if GameID == "BPR1" then
+		if GameID == "BPR1" or GameID == "BPEE" then -- revise me
 			MultichoiceAdr = 138282176
 		elseif GameID == "BPR2" then
 			MultichoiceAdr = 138282288
@@ -1037,26 +1083,28 @@ function Loadscript(ScriptNo)
 			MultichoiceAdr = 138281836
 		end
 	
-			--Convert 4-byte buffer to readable bytes in case its needed
-				TextToNum = 0
-				for i = 1, 4 do
-					NickNameNum = string.sub(PlayerIDNick[PlayerTalkingID],i,i)
-					NickNameNum = string.byte(NickNameNum)
-					NickNameNum = tonumber(NickNameNum)
-					if NickNameNum > 64 and NickNameNum < 93 then
-						NickNameNum = NickNameNum + 122
-					
-					elseif NickNameNum > 92 and NickNameNum < 128 then
-						NickNameNum = NickNameNum + 116
-					else
-						NickNameNum = NickNameNum + 113
-					end
-					Buffer[i] = NickNameNum
-					if Buffer[i] == "" or Buffer[i] == nil then Buffer[i] = "A" end
+		--Convert 4-byte buffer to readable bytes in case its needed
+			TextToNum = 0
+			for i = 1, 4 do
+				NickNameNum = string.sub(PlayerIDNick[PlayerTalkingID],i,i)
+				NickNameNum = string.byte(NickNameNum)
+				NickNameNum = tonumber(NickNameNum)
+				if NickNameNum > 64 and NickNameNum < 93 then
+					NickNameNum = NickNameNum + 122
+				
+				elseif NickNameNum > 92 and NickNameNum < 128 then
+					NickNameNum = NickNameNum + 116
+				else
+					NickNameNum = NickNameNum + 113
 				end
-			
+				Buffer[i] = NickNameNum
+				if Buffer[i] == "" or Buffer[i] == nil then Buffer[i] = "A" end
+			end
+		
+			ScriptAddressTemp = ScriptAddress2
+
 			if ScriptNo == 0 then
-				ScriptAddressTemp = ScriptAddress2
+				 
 				ScriptAddressTemp1 = 4294902380
 				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
 		--		LoadScriptIntoMemory()
@@ -1064,70 +1112,22 @@ function Loadscript(ScriptNo)
 			elseif ScriptNo == 1 then 
 				emu:write16(Var8000Adr[2], 0) 
 				emu:write16(Var8000Adr[5], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 603983722
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2148344069
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 17170433
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 145227804
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 25166870
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278348800
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 41944086
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278348800
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3773424593
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3823960280
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3722445033
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3892369887
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3805872355
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655390933
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3638412030
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3034710233
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654929664
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16755935
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local HostScript = {603983722, 151562240, 2148344069, 17170433, 145227804, 25166870, 4278348800, 41944086, 4278348800, 3773424593, 3823960280, 3722445033, 3892369887, 3805872355, 3655390933, 3638412030, 3034710233, 3654929664, 16755935}
+				 
+				for i = 1, #HostScript do
+					ROMCARD:write32(ScriptAddressTemp, HostScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4
+				end
+
 				LoadScriptIntoMemory()
 		--Interaction Menu	Multi Choice
 			elseif ScriptNo == 2 then
+				ConsoleForText:print("loading script to bring up multi choice interaction menu" .. string.char(10))
 				emu:write16(Var8000Adr[1], 0) 
 				emu:write16(Var8000Adr[2], 0) 
 				emu:write16(Var8000Adr[14], 0) 
-				ScriptAddressTemp = ScriptAddress2
+				 
 				ScriptAddressTemp1 = 1664873
 				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
 				ScriptAddressTemp = ScriptAddressTemp + 4 
@@ -1245,186 +1245,48 @@ function Loadscript(ScriptNo)
 		--Placeholder
 			elseif ScriptNo == 3 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3907242239
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3689078236
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3839220736
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655522788
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16756952
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+
+				local PlaceholderScript = {285216618, 151562240, 2147554822, 40632321, 3907242239, 3689078236, 3839220736, 3655522788, 16756952, 4294967295}
+				 
+				for i = 1, #PlaceholderScript do
+					ROMCARD:write32(ScriptAddressTemp, PlaceholderScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--Waiting message
 			elseif ScriptNo == 4 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 1271658
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 375785640
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 5210113
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 654415909
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3523150444
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3723025877
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3657489378
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3808487139
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3873037544
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3588285440
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2967919085
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294902015
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+
+				
+				local WaitingScript = {1271658, 375785640, 5210113, 654415909, 3523150444, 3723025877, 3657489378, 3808487139, 3873037544, 3588285440, 2967919085, 4294902015}
+				
+				for i = 1, #WaitingScript do
+					ROMCARD:write32(ScriptAddressTemp, WaitingScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
+				
 				LoadScriptIntoMemory()
 		--Cancel message
 			elseif ScriptNo == 5 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632325
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3706249984
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3825264345
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656242656
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587965158
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587637479
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772372962
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289583321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)  
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local CancelScript = {285216618, 151562240, 2147554822, 40632325, 3655126783, 3706249984, 3825264345, 3656242656, 3587965158, 3587637479, 3772372962, 4289583321, 4294967040}
+				 
+				for i = 1, #CancelScript do
+					ROMCARD:write32(ScriptAddressTemp, CancelScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--Trade request
 			elseif ScriptNo == 6 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 469765994
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2148344069
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 393217
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 145227850
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 41943318
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278348800
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942646781
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655133149
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3823632615
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3588679680
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942701528
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)  
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14477533
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2917786605
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14925566
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15328237
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654801365
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289521892
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 18284288
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1811939712
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967042
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local TradeRequestScript = {469765994, 151562240, 2148344069, 393217, 145227850, 41943318, 4278348800, 3942646781, 3655133149, 3823632615, 3588679680, 3942701528, 14477533, 2917786605, 14925566, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
+				 
+				for i = 1, #TradeRequestScript do
+					ROMCARD:write32(ScriptAddressTemp, TradeRequestScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 				--For buffer 2
 				ScriptAddressTemp = 33692912
@@ -1445,234 +1307,48 @@ function Loadscript(ScriptNo)
 		--Trade request denied
 			elseif ScriptNo == 7 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3706249984
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3825264345
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656242656
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3822584038
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3808356313
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942705379
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14477277
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)  
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3892372456
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654866406
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278255533
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local TradeRequestDeniedScript = {285216618, 151562240, 2147554822, 40632321, 3655126783, 3706249984, 3825264345, 3656242656, 3822584038, 3808356313, 3942705379, 14477277, 3892372456, 3654866406, 4278255533}
+				 
+				for i = 1, #TradeRequestDeniedScript do
+					ROMCARD:write32(ScriptAddressTemp, TradeRequestDeniedScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--Trade offer
 			elseif ScriptNo == 8 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 469765994
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2148344069
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 393217
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 145227866
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 41943318
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278348800
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15328211
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656046044
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3671778048
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3638159065
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2902719744
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)  
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126782
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587965165
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3808483818
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3873037018
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4244691161
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3522931970
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14737629
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15328237
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654801365
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289521892
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 18284288
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1811939712
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967042
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local TradeOfferScript = {469765994, 151562240, 2148344069, 393217, 145227866, 41943318, 4278348800, 15328211, 3656046044, 3671778048, 3638159065, 2902719744, 3655126782, 3587965165, 3808483818, 3873037018, 4244691161, 3522931970, 14737629, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
+				 
+				for i = 1, #TradeOfferScript do
+					ROMCARD:write32(ScriptAddressTemp, TradeOfferScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--Trade offer denied
 			elseif ScriptNo == 9 then
-				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3588679680
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3691043288
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3590383573
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14866905
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772242392
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3638158045
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278255533
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				emu:write16(Var8000Adr[2], 0)
+
+				local TradeOfferDeniedScript = {285216618, 151562240, 2147554822, 40632321, 3655126783, 3588679680, 3691043288, 3590383573, 14866905, 3772242392, 3638158045, 4278255533}
+				 
+				for i = 1, #TradeOfferDeniedScript do
+					ROMCARD:write32(ScriptAddressTemp, TradeOfferDeniedScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
+
 				LoadScriptIntoMemory()
 		--Battle request
 			elseif ScriptNo == 10 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 469765994
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2148344069
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 393217
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 145227846
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 41943318
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4278348800
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942646781
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655133149
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3823632615
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3906328064
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14278888
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2917786605
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14925566
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15328237
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654801365
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289521892
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 18284288
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1811939712
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967042
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local BattleRequestScript = {469765994, 151562240, 2148344069, 393217, 145227846, 41943318, 4278348800, 3942646781, 3655133149, 3823632615, 3906328064, 14278888, 2917786605, 14925566, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
+				 
+				for i = 1, #BattleRequestScript do
+					ROMCARD:write32(ScriptAddressTemp, BattleRequestScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
+
 				LoadScriptIntoMemory()
 				--For buffer 2
 				ScriptAddressTemp = 33692912
@@ -1693,54 +1369,14 @@ function Loadscript(ScriptNo)
 		--Battle request denied
 			elseif ScriptNo == 11 then
 				emu:write16(Var8000Adr[2], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3706249984
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3825264345
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656242656
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3822584038
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3808356313
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942705379
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14477277
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3590382568
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3773360341
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16756185
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local BattleRequestDeniedScript = {285216618, 151562240, 2147554822, 40632321, 3655126783, 3706249984, 3825264345, 3656242656, 3822584038, 3808356313, 3942705379, 14477277, 3590382568, 3773360341, 16756185, 4294967295}
+				 
+				for i = 1, #BattleRequestDeniedScript do
+					ROMCARD:write32(ScriptAddressTemp, BattleRequestDeniedScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
+
 				LoadScriptIntoMemory()
 		--Select Pokemon for trade
 			elseif ScriptNo == 12 then
@@ -1749,435 +1385,117 @@ function Loadscript(ScriptNo)
 				emu:write16(Var8000Adr[4], 0) 
 				emu:write16(Var8000Adr[5], 0) 
 				emu:write16(Var8000Adr[14], 0) 
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 10429802
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147754279
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 67502086
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 145227809
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1199571750
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 50429185
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554944
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632322
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147555071
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+
+				local SelectPkmForTradeScript = {10429802, 2147754279, 67502086, 145227809, 1199571750, 50429185, 2147554944, 40632322, 2147555071, 40632321, 4294967295}
+				 
+				for i = 1, #SelectPkmForTradeScript do
+					ROMCARD:write32(ScriptAddressTemp, SelectPkmForTradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
+
 				LoadScriptIntoMemory()
 		--Battle will start
 			elseif ScriptNo == 13 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 1416042
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 627443880
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1009254542
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554816
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632322
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3924022271
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587571942
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655395560
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772640000
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3823239392
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3654680811
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2917326299
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294902015
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+
+				local StartBattleScript = {1416042, 627443880, 1009254542, 2147554816, 40632322, 3924022271, 3587571942, 3655395560, 3772640000, 3823239392, 3654680811, 2917326299, 4294902015}
+				 
+				for i = 1, #StartBattleScript do
+					ROMCARD:write32(ScriptAddressTemp, StartBattleScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--Trade will start
 			elseif ScriptNo == 14 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 1416042
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 627443880
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1009254542
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554816
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632322
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3924022271
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3873964262
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14276821
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772833259
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3957580288
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3688486400
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289585885
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+				local StartTradeScript = {1416042, 627443880, 1009254542, 2147554816, 40632322, 3924022271, 3873964262, 14276821, 3772833259, 3957580288, 3688486400, 4289585885, 4294967040}
+				 
+				for i = 1, #StartTradeScript do
+					ROMCARD:write32(ScriptAddressTemp, StartTradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--You have canceled the battle
 			elseif ScriptNo == 15 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632326
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3924022271
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3939884032
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587637465
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772372962
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14211552
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14277864
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3907573206
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289583584
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+
+				local SelfCancelBattleScript = {285216618, 151562240, 2147554822, 40632326, 3924022271, 3939884032, 3587637465, 3772372962, 14211552, 14277864, 3907573206, 4289583584, 4294967040}
+				 
+				for i = 1, #SelfCancelBattleScript do
+					ROMCARD:write32(ScriptAddressTemp, SelfCancelBattleScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 		--You have canceled the trade
 			elseif ScriptNo == 16 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632326
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3924022271
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3939884032
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587637465
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772372962
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14211552
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14277864
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3637896936
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16756185
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				
+				local SelfCancelTradeScript = {285216618, 151562240, 2147554822, 40632326, 3924022271, 3939884032, 3587637465, 3772372962, 14211552, 14277864, 3637896936, 16756185, 4294967295}
+				 
+				for i = 1, #SelfCancelTradeScript do
+					ROMCARD:write32(ScriptAddressTemp, SelfCancelTradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--Trading. Your pokemon is stored in 8004, whereas enemy pokemon is already stored through setenemypokemon command
 			elseif ScriptNo == 17 then
 				emu:write16(Var8000Adr[2], 0)
 				emu:write16(Var8000Adr[6], Var8000[5])
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 16655722
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554855
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				
+				local TradeScript = {16655722, 2147554855, 40632321, 4294967295}
+				 
+				for i = 1, #TradeScript do
+					ROMCARD:write32(ScriptAddressTemp, TradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--Cancel Battle
 			elseif ScriptNo == 18 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632325
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3706249984
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3825264345
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656242656
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587965158
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587637479
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772372962
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4275624416
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14277864
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3907573206
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289583584
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				 
+				local CancelBattleScript = {285216618, 151562240, 2147554822, 40632325, 3655126783, 3706249984, 3825264345, 3656242656, 3587965158, 3587637479, 3772372962, 4275624416, 14277864, 3907573206, 4289583584, 4294967040}
+				
+				for i = 1, #CancelBattleScript do
+					ROMCARD:write32(ScriptAddressTemp, CancelBattleScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--Cancel Trading
 			elseif ScriptNo == 19 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632325
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655126783
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3706249984
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3825264345
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3656242656
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587965158
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3587637479
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3772372962
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4275624416
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14277864
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3637896936
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16756185
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				 
+				local CancelTradeScript = {285216618, 151562240, 2147554822, 40632325, 3655126783, 3706249984, 3825264345, 3656242656, 3587965158, 3587637479, 3772372962, 4275624416, 14277864, 3637896936, 16756185, 4294967295}
+				for i = 1, #CancelTradeScript do
+					ROMCARD:write32(ScriptAddressTemp, CancelTradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--other player is too busy to battle.
 			elseif ScriptNo == 20 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3722235647
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3873964263
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655523797
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655794918
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15196633
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4276347880
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3991398870
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14936064
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3907573206
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289780192
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				 
+				local BusyBattleScript = {285216618, 151562240, 2147554822, 40632321, 3722235647, 3873964263, 3655523797, 3655794918, 15196633, 4276347880, 3991398870, 14936064, 3907573206, 4289780192, 4294967040}
+				
+				for i = 1, #BusyBattleScript do
+					ROMCARD:write32(ScriptAddressTemp, BusyBattleScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--other player is too busy to trade.
 			elseif ScriptNo == 21 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
-				ScriptAddressTemp1 = 285216618
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 151562240
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147554822
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40632321
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3722235647
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3873964263
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655523797
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655794918
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15196633
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4276347880
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3991398870
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14936064
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3637896936
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 16756953
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967295
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				 
+				local BusyTradeScript =  {285216618, 151562240, 2147554822, 40632321, 3722235647, 3873964263, 3655523797, 3655794918, 15196633, 4276347880, 3991398870, 14936064, 3637896936, 16756953, 4294967295}
+				for i = 1, #BusyTradeScript do
+					ROMCARD:write32(ScriptAddressTemp, BusyTradeScript[i]) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+				end
 				LoadScriptIntoMemory()
 			--battle script
 			elseif ScriptNo == 22 then
 				emu:write16(Var8000Adr[2], 0)
-				ScriptAddressTemp = ScriptAddress2
+				 
 				ScriptAddressTemp1 = 40656234
 				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
 				LoadScriptIntoMemory()
@@ -2252,45 +1570,45 @@ function LoadScriptIntoMemory()
 	local u32 ScriptAddress2 = 145227776
 	local ScriptAddressTemp = 0
 	local ScriptAddressTemp1 = 0
-				ScriptAddressTemp = ScriptAddress
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				--Either use 66048, 512, or 513.
-				ScriptAddressTemp1 = 513
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				--134654353 and 145293312 freezes the game
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = ScriptAddress2 + 1
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 0
-				emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				--END Block
+	ScriptAddressTemp = ScriptAddress
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	--Either use 66048, 512, or 513.
+	ScriptAddressTemp1 = 513
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4
+	--134654353 and 145293312 freezes the game
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = ScriptAddress2 + 1
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
+	ScriptAddressTemp = ScriptAddressTemp + 4 
+	ScriptAddressTemp1 = 0
+	emu:write32(ScriptAddressTemp, ScriptAddressTemp1)
+	--END Block
 end
 
 function SendMultiplayerPackets(Offset, size, Socket)
@@ -2792,17 +2110,20 @@ function RenderPlayersOnDifferentMap()
 	for i = 1, MaxPlayers do
 		if PlayerID ~= i and PlayerIDNick[i] ~= "None" then
 			if PlayerMapID == CurrentMapID[i] then
+				--ConsoleForText:print("Drawing on same map player: " .. i .. " my/their mapID: " .. PlayerMapID .. "/" .. CurrentMapID[i] .. " previousmapID: " .. PlayerMapIDPrev .. "/" .. PreviousMapID[i] .. string.char(10))
 				PlayerVis[i] = 1
 				DifferentMapX[i] = 0
 				DifferentMapY[i] = 0
 				MapChange[i] = 0
-			elseif (PlayerMapIDPrev == CurrentMapID[i] or PlayerMapID == PreviousMapID[i]) and MapEntranceType[i] == 0 then
+			elseif (PlayerMapIDPrev == CurrentMapID[i] or PlayerMapID == PreviousMapID[i]) and (MapEntranceType[i] == 0 or PlayerMapEntranceType == 0) then
+				--ConsoleForText:print("Drawing on diff map player: " .. i .. " my/their mapID: " .. PlayerMapID .. "/" .. CurrentMapID[i] .. " previousmapID: " .. PlayerMapIDPrev .. "/" .. PreviousMapID[i] .. " MapEntranceType: " .. PlayerMapEntranceType .. "/" .. MapEntranceType[i] .. string.char(10))
 				PlayerVis[i] = 1
 				if MapChange[i] == 1 then
 					DifferentMapX[i] = ((PreviousX[i] - StartX[i]) * 16)
 					DifferentMapY[i] = ((PreviousY[i] - StartY[i]) * 16)
 				end
 			else
+				--ConsoleForText:print("Not drawing on diff map player: " .. i .. " my/their mapID: " .. PlayerMapID .. "/" .. CurrentMapID[i] .. " previousmapID: " .. PlayerMapIDPrev .. "/" .. PreviousMapID[i] .. " MapEntranceType: " .. PlayerMapEntranceType .. "/"  .. MapEntranceType[i] .. string.char(10))
 				PlayerVis[i] = 0
 				DifferentMapX[i] = 0
 				DifferentMapY[i] = 0
@@ -2851,7 +2172,7 @@ function GetPosition()
 		MapAddress = 33799296
 		BikeAddress = 33687100
 		PrevMapIDAddress = 33799298
-		ConnectionTypeAddress = 33786663 --0x2038B27
+		ConnectionTypeAddress = 33786663
 		Bike = emu:read16(BikeAddress)
 			-- Emerald Bike Values: 
 				--Dive 23708 
@@ -2860,18 +2181,18 @@ function GetPosition()
 				--Biking 23396
 	end
 	PlayerFacing = emu:read8(PlayerFaceAddress)
-
 	Facing2[PlayerID] = PlayerFacing + 100   --obsolete?
-	
+	PlayerMapEntranceType = emu:read8(ConnectionTypeAddress)
+
 	
 	
 	--Prev map
 	PlayerMapIDPrev = emu:read16(PrevMapIDAddress)
 	PlayerMapIDPrev = PlayerMapIDPrev + 100000
-	if PlayerMapIDPrev == PlayerMapID then
+	-- These values are only equal if you are changing map
+	if (PlayerMapIDPrev == PlayerMapID) then
 		PreviousX[PlayerID] = CurrentX[PlayerID]
 		PreviousY[PlayerID] = CurrentY[PlayerID]
-		PlayerMapEntranceType = emu:read8(ConnectionTypeAddress)
 		if PlayerMapEntranceType > 10 then PlayerMapEntranceType = 9 end
 		PlayerMapChange = 1
 		MapChange[PlayerID] = 1
@@ -2890,67 +2211,67 @@ function GetPosition()
 	-- Firered/Leafgreen
 		--Male Sprite from 1.0, 1.1, and leafgreen
 		if ((Bike == 160 or Bike == 272) or (Bike == 128 or Bike == 240)) then
-			globalSpriteNo[PlayerID] = 0
+			globalSpriteNo[PlayerID] = FR_M_SpriteID
 			PlayerExtra3[PlayerID] = 0
 		--	if TempVar2 == 0 then ConsoleForText:print("Male on Foot") end
 
 		--Male Biking Sprite										
 		elseif (Bike == 320 or Bike == 432 or Bike == 288 or Bike == 400) then
-			globalSpriteNo[PlayerID] = 0
+			globalSpriteNo[PlayerID] = FR_M_SpriteID
 			PlayerExtra3[PlayerID] = 1
 		--	if TempVar2 == 0 then ConsoleForText:print("Male on Bike") end
 
 		--Male Surfing Sprite
 		elseif (Bike == 624 or Bike == 736 or Bike == 592 or Bike == 704) then
-			globalSpriteNo[PlayerID] = 0
+			globalSpriteNo[PlayerID] = FR_M_SpriteID
 			PlayerExtra3[PlayerID] = 2
 
 		--Female sprite
 		elseif ((Bike == 392 or Bike == 504) or (Bike == 360 or Bike == 472)) then
-			globalSpriteNo[PlayerID] = 1
+			globalSpriteNo[PlayerID] = FR_F_SpriteID
 			PlayerExtra3[PlayerID] = 0
 		--	if TempVar2 == 0 then ConsoleForText:print("Female on Foot") end
 
 		--Female Biking sprite
 		elseif ((Bike == 552 or Bike == 664) or (Bike == 520 or Bike == 632)) then
-			globalSpriteNo[PlayerID] = 1
+			globalSpriteNo[PlayerID] = FR_F_SpriteID
 			PlayerExtra3[PlayerID] = 1
 		--	if TempVar2 == 0 then ConsoleForText:print("Female on Bike") end
 
 		--Female Surfing Sprite
 		elseif (Bike == 720 or Bike == 832 or Bike == 688 or Bike == 800) then
-			globalSpriteNo[PlayerID] = 1
+			globalSpriteNo[PlayerID] = FR_F_SpriteID
 			PlayerExtra3[PlayerID] = 2
 
 	-- Emerald 
 		--Male on foot
 		elseif Bike == 23180 then
-			globalSpriteNo[PlayerID] = 3;
+			globalSpriteNo[PlayerID] = EM_M_SpriteID;
 			PlayerExtra3[PlayerID] = 0;
 
 		--Male Biking
 		elseif Bike == 23324 then
-			globalSpriteNo[PlayerID] = 3;
+			globalSpriteNo[PlayerID] = EM_M_SpriteID;
 			PlayerExtra3[PlayerID] = 1;
 		
 		--Male Surfing
 		elseif Bike == 23612 then
-			globalSpriteNo[PlayerID] = 3;
+			globalSpriteNo[PlayerID] = EM_M_SpriteID;
 			PlayerExtra3[PlayerID] = 2;
 		
 		--Female on foot
 		elseif Bike == 0 then
-			globalSpriteNo[PlayerID] = 4;
+			globalSpriteNo[PlayerID] = EM_F_SpriteID;
 			PlayerExtra3[PlayerID] = 0;
 
 		--Female Biking
 		elseif Bike == 0 then
-			globalSpriteNo[PlayerID] = 4;
+			globalSpriteNo[PlayerID] = EM_F_SpriteID;
 			PlayerExtra3[PlayerID] = 1;
 		
 		--Female Surfing
 		elseif Bike == 0 then
-			globalSpriteNo[PlayerID] = 4;
+			globalSpriteNo[PlayerID] = EM_F_SpriteID;
 			PlayerExtra3[PlayerID] = 2;
 	
 
@@ -2963,8 +2284,10 @@ function GetPosition()
 
 	if PlayerExtra1[PlayerID] ~= 0 then PlayerExtra1[PlayerID] = PlayerExtra1[PlayerID] - 100 end
 	
+	-- Surfing
 	if PlayerExtra3[PlayerID] == 2 then
-		if (GameID == "BPR1" or GameID == "BPR2" or GameID == "BPG1" or GameID == "BPG2") then
+		if GameID ~= "BPEE" then
+		--if (GameID == "BPR1" or GameID == "BPR2" or GameID == "BPG1" or GameID == "BPG2") then
 			PreviousPlayerDirection = PlayerDirection
 			--Facing
 			if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 33 PlayerDirection = 4 end
@@ -3007,10 +2330,10 @@ function GetPosition()
 			if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 35 PlayerDirection = 1 end
 			if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 36 PlayerDirection = 2 end
 			--Surfing
-			if PlayerFacing == 26 then PlayerExtra1[PlayerID] = 37 PlayerDirection = 4 end
-			if PlayerFacing == 27 then PlayerExtra1[PlayerID] = 38 PlayerDirection = 3 end
-			if PlayerFacing == 28 then PlayerExtra1[PlayerID] = 39 PlayerDirection = 1 end
-			if PlayerFacing == 29 then PlayerExtra1[PlayerID] = 40 PlayerDirection = 2 end
+			if PlayerFacing == 21 then PlayerExtra1[PlayerID] = 37 PlayerDirection = 4 end
+			if PlayerFacing == 22 then PlayerExtra1[PlayerID] = 38 PlayerDirection = 3 end
+			if PlayerFacing == 23 then PlayerExtra1[PlayerID] = 39 PlayerDirection = 1 end
+			if PlayerFacing == 24 then PlayerExtra1[PlayerID] = 40 PlayerDirection = 2 end
 			--Turning
 			if PlayerFacing == 33 then PlayerExtra1[PlayerID] = 33 PlayerDirection = 4 end
 			if PlayerFacing == 34 then PlayerExtra1[PlayerID] = 34 PlayerDirection = 3 end
@@ -3037,112 +2360,169 @@ function GetPosition()
 		end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 		if ScreenData == 0 then
 			if PlayerDirection == 4 then PlayerExtra1[PlayerID] = 33 PlayerFacing = 0 end
 			if PlayerDirection == 3 then PlayerExtra1[PlayerID] = 34 PlayerFacing = 1 end
 			if PlayerDirection == 1 then PlayerExtra1[PlayerID] = 35 PlayerFacing = 2 end
 			if PlayerDirection == 2 then PlayerExtra1[PlayerID] = 36 PlayerFacing = 3 end
 		end
+	-- Biking
 	elseif PlayerExtra3[PlayerID] == 1 then
-		if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 17 PlayerDirection = 4 end
-		if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 18 PlayerDirection = 3 end
-		if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 19 PlayerDirection = 1 end
-		if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 20 PlayerDirection = 2 end
-		--Standard speed
-		if PlayerFacing == 49 then PlayerExtra1[PlayerID] = 21 PlayerDirection = 4 end
-		if PlayerFacing == 50 then PlayerExtra1[PlayerID] = 22 PlayerDirection = 3 end
-		if PlayerFacing == 51 then PlayerExtra1[PlayerID] = 23 PlayerDirection = 1 end
-		if PlayerFacing == 52 then PlayerExtra1[PlayerID] = 24 PlayerDirection = 2 end
-		--In case you use a fast bike
-		if PlayerFacing == 61 then PlayerExtra1[PlayerID] = 25 PlayerDirection = 4 end
-		if PlayerFacing == 62 then PlayerExtra1[PlayerID] = 26 PlayerDirection = 3 end
-		if PlayerFacing == 63 then PlayerExtra1[PlayerID] = 27 PlayerDirection = 1 end
-		if PlayerFacing == 64 then PlayerExtra1[PlayerID] = 28 PlayerDirection = 2 end
-		--hitting a wall
-		if PlayerFacing == 37 then PlayerExtra1[PlayerID] = 29 PlayerDirection = 4 end
-		if PlayerFacing == 38 then PlayerExtra1[PlayerID] = 30 PlayerDirection = 3 end
-		if PlayerFacing == 39 then PlayerExtra1[PlayerID] = 31 PlayerDirection = 1 end
-		if PlayerFacing == 40 then PlayerExtra1[PlayerID] = 32 PlayerDirection = 2 end
-		
-		--calling pokemon out
-		if PlayerFacing == 69 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
-		
+		if RegionID == KantoRegionID then
+				
+			if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 17 PlayerDirection = 4 end
+			if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 18 PlayerDirection = 3 end
+			if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 19 PlayerDirection = 1 end
+			if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 20 PlayerDirection = 2 end
+			--Standard speed
+			if PlayerFacing == 49 then PlayerExtra1[PlayerID] = 21 PlayerDirection = 4 end
+			if PlayerFacing == 50 then PlayerExtra1[PlayerID] = 22 PlayerDirection = 3 end
+			if PlayerFacing == 51 then PlayerExtra1[PlayerID] = 23 PlayerDirection = 1 end
+			if PlayerFacing == 52 then PlayerExtra1[PlayerID] = 24 PlayerDirection = 2 end
+			--In case you use a fast bike
+			if PlayerFacing == 61 then PlayerExtra1[PlayerID] = 25 PlayerDirection = 4 end
+			if PlayerFacing == 62 then PlayerExtra1[PlayerID] = 26 PlayerDirection = 3 end
+			if PlayerFacing == 63 then PlayerExtra1[PlayerID] = 27 PlayerDirection = 1 end
+			if PlayerFacing == 64 then PlayerExtra1[PlayerID] = 28 PlayerDirection = 2 end
+			--hitting a wall
+			if PlayerFacing == 37 then PlayerExtra1[PlayerID] = 29 PlayerDirection = 4 end
+			if PlayerFacing == 38 then PlayerExtra1[PlayerID] = 30 PlayerDirection = 3 end
+			if PlayerFacing == 39 then PlayerExtra1[PlayerID] = 31 PlayerDirection = 1 end
+			if PlayerFacing == 40 then PlayerExtra1[PlayerID] = 32 PlayerDirection = 2 end
+			
+			--calling pokemon out
+			if PlayerFacing == 69 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+		elseif RegionID == HoennRegionID then
+
+			if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 17 PlayerDirection = 4 end
+			if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 18 PlayerDirection = 3 end
+			if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 19 PlayerDirection = 1 end
+			if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 20 PlayerDirection = 2 end
+			--Standard speed
+			if PlayerFacing == 8 then PlayerExtra1[PlayerID] = 21 PlayerDirection = 4 end
+			if PlayerFacing == 9 then PlayerExtra1[PlayerID] = 22 PlayerDirection = 3 end
+			if PlayerFacing == 10 then PlayerExtra1[PlayerID] = 23 PlayerDirection = 1 end
+			if PlayerFacing == 11 then PlayerExtra1[PlayerID] = 24 PlayerDirection = 2 end
+			--In case you use a fast bike
+			if PlayerFacing == 21 then PlayerExtra1[PlayerID] = 25 PlayerDirection = 4 end
+			if PlayerFacing == 22 then PlayerExtra1[PlayerID] = 26 PlayerDirection = 3 end
+			if PlayerFacing == 23 then PlayerExtra1[PlayerID] = 27 PlayerDirection = 1 end
+			if PlayerFacing == 24 then PlayerExtra1[PlayerID] = 28 PlayerDirection = 2 end
+			--In case you use a hecka fast bike
+			if PlayerFacing == 45 then PlayerExtra1[PlayerID] = 25 PlayerDirection = 4 end
+			if PlayerFacing == 46 then PlayerExtra1[PlayerID] = 26 PlayerDirection = 3 end
+			if PlayerFacing == 47 then PlayerExtra1[PlayerID] = 27 PlayerDirection = 1 end
+			if PlayerFacing == 48 then PlayerExtra1[PlayerID] = 28 PlayerDirection = 2 end
+			--hitting a wall
+			if PlayerFacing == 29 then PlayerExtra1[PlayerID] = 29 PlayerDirection = 4 end
+			if PlayerFacing == 30 then PlayerExtra1[PlayerID] = 30 PlayerDirection = 3 end
+			if PlayerFacing == 31 then PlayerExtra1[PlayerID] = 31 PlayerDirection = 1 end
+			if PlayerFacing == 32 then PlayerExtra1[PlayerID] = 32 PlayerDirection = 2 end
+
+
+
+		end
+
 		if ScreenData == 0 then
 			if PlayerDirection == 4 then PlayerExtra1[PlayerID] = 17 PlayerFacing = 0 end
 			if PlayerDirection == 3 then PlayerExtra1[PlayerID] = 18 PlayerFacing = 1 end
 			if PlayerDirection == 1 then PlayerExtra1[PlayerID] = 19 PlayerFacing = 2 end
 			if PlayerDirection == 2 then PlayerExtra1[PlayerID] = 20 PlayerFacing = 3 end
 		end
+	-- On foot
 	else
-		--Standing still
-		if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
-		if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
-		if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
-		if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
-		
-		--Hitting stuff
-		if PlayerFacing == 33 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
-		if PlayerFacing == 34 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
-		if PlayerFacing == 35 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
-		if PlayerFacing == 36 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
-		
-		if PlayerFacing == 37 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
-		if PlayerFacing == 38 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
-		if PlayerFacing == 39 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
-		if PlayerFacing == 40 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
-		
-		--Walking
-		if PlayerFacing == 16 then PlayerExtra1[PlayerID] = 5 PlayerDirection = 4 end
-		if PlayerFacing == 17 then PlayerExtra1[PlayerID] = 6 PlayerDirection = 3 end
-		if PlayerFacing == 18 then PlayerExtra1[PlayerID] = 7 PlayerDirection = 1 end
-		if PlayerFacing == 19 then PlayerExtra1[PlayerID] = 8 PlayerDirection = 2 end
-		
-		--Jumping over route
-		if PlayerFacing == 20 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
-		if PlayerFacing == 21 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
-		if PlayerFacing == 22 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
-		if PlayerFacing == 23 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
-		--Turning
-		if PlayerFacing == 41 then PlayerExtra1[PlayerID] = 9 PlayerDirection = 4 end
-		if PlayerFacing == 42 then PlayerExtra1[PlayerID] = 10 PlayerDirection = 3 end
-		if PlayerFacing == 43 then PlayerExtra1[PlayerID] = 11 PlayerDirection = 1 end
-		if PlayerFacing == 44 then PlayerExtra1[PlayerID] = 12 PlayerDirection = 2 end
-		--Running
-		if PlayerFacing == 61 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
-		if PlayerFacing == 62 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
-		if PlayerFacing == 63 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
-		if PlayerFacing == 64 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
-		
-		--calling pokemon out
-		if PlayerFacing == 69 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
-		
+		if RegionID == KantoRegionID then
+			--Standing still
+			if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+			if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			--Hitting stuff
+			if PlayerFacing == 33 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+			if PlayerFacing == 34 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 35 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 36 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			if PlayerFacing == 37 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+			if PlayerFacing == 38 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 39 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 40 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			--Walking
+			if PlayerFacing == 16 then PlayerExtra1[PlayerID] = 5 PlayerDirection = 4 end
+			if PlayerFacing == 17 then PlayerExtra1[PlayerID] = 6 PlayerDirection = 3 end
+			if PlayerFacing == 18 then PlayerExtra1[PlayerID] = 7 PlayerDirection = 1 end
+			if PlayerFacing == 19 then PlayerExtra1[PlayerID] = 8 PlayerDirection = 2 end
+			
+			--Jumping over route
+			if PlayerFacing == 20 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
+			if PlayerFacing == 21 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
+			if PlayerFacing == 22 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
+			if PlayerFacing == 23 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
+			--Turning
+			if PlayerFacing == 41 then PlayerExtra1[PlayerID] = 9 PlayerDirection = 4 end
+			if PlayerFacing == 42 then PlayerExtra1[PlayerID] = 10 PlayerDirection = 3 end
+			if PlayerFacing == 43 then PlayerExtra1[PlayerID] = 11 PlayerDirection = 1 end
+			if PlayerFacing == 44 then PlayerExtra1[PlayerID] = 12 PlayerDirection = 2 end
+			--Running
+			if PlayerFacing == 61 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
+			if PlayerFacing == 62 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
+			if PlayerFacing == 63 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
+			if PlayerFacing == 64 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
+			
+			--calling pokemon out
+			if PlayerFacing == 69 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+		elseif RegionID == HoennRegionID then
+			--Standing still
+			if PlayerFacing == 0 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+			if PlayerFacing == 1 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 2 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 3 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			--Hitting stuff	
+			if PlayerFacing == 25 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+			if PlayerFacing == 26 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 27 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 28 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			if PlayerFacing == 29 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end --not too sure about these four, revisit
+			if PlayerFacing == 30 then PlayerExtra1[PlayerID] = 2 PlayerDirection = 3 end
+			if PlayerFacing == 31 then PlayerExtra1[PlayerID] = 3 PlayerDirection = 1 end
+			if PlayerFacing == 32 then PlayerExtra1[PlayerID] = 4 PlayerDirection = 2 end
+			
+			--Walking
+			if PlayerFacing == 8 then PlayerExtra1[PlayerID] = 5 PlayerDirection = 4 end
+			if PlayerFacing == 9 then PlayerExtra1[PlayerID] = 6 PlayerDirection = 3 end
+			if PlayerFacing == 10 then PlayerExtra1[PlayerID] = 7 PlayerDirection = 1 end
+			if PlayerFacing == 11 then PlayerExtra1[PlayerID] = 8 PlayerDirection = 2 end
+			
+			--Jumping over route
+			if PlayerFacing == 12 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
+			if PlayerFacing == 13 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
+			if PlayerFacing == 14 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
+			if PlayerFacing == 15 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
+			--Turning
+			if PlayerFacing == 33 then PlayerExtra1[PlayerID] = 9 PlayerDirection = 4 end
+			if PlayerFacing == 34 then PlayerExtra1[PlayerID] = 10 PlayerDirection = 3 end
+			if PlayerFacing == 35 then PlayerExtra1[PlayerID] = 11 PlayerDirection = 1 end
+			if PlayerFacing == 36 then PlayerExtra1[PlayerID] = 12 PlayerDirection = 2 end
+			--Running
+			if PlayerFacing == 53 then PlayerExtra1[PlayerID] = 13 PlayerDirection = 4 end
+			if PlayerFacing == 54 then PlayerExtra1[PlayerID] = 14 PlayerDirection = 3 end
+			if PlayerFacing == 55 then PlayerExtra1[PlayerID] = 15 PlayerDirection = 1 end
+			if PlayerFacing == 56 then PlayerExtra1[PlayerID] = 16 PlayerDirection = 2 end
+			
+			--calling pokemon out
+			if PlayerFacing == 57 then PlayerExtra1[PlayerID] = 1 PlayerDirection = 4 end
+		end
+
 		if ScreenData == 0 then
 			if PlayerDirection == 4 then PlayerExtra1[PlayerID] = 1 PlayerFacing = 0 end
 			if PlayerDirection == 3 then PlayerExtra1[PlayerID] = 2 PlayerFacing = 1 end
 			if PlayerDirection == 1 then PlayerExtra1[PlayerID] = 3 PlayerFacing = 2 end
 			if PlayerDirection == 2 then PlayerExtra1[PlayerID] = 4 PlayerFacing = 3 end
 		end
-		--	if Facing == 255 then PlayerExtra1 = 0 end
 	end
 	PlayerExtra1[PlayerID] = PlayerExtra1[PlayerID] + 100
 	CurrentFacingDirection[PlayerID] = PlayerDirection
@@ -3193,22 +2573,23 @@ end
 
 
 function AnimatePlayerMovement(PlayerNo, AnimateID)
-		--This is for updating the previous coords with new ones, without looking janky
-		--AnimateID List
-		--0 = Standing Still
-		--1 = Walking Down
-		--2 = Walking Up
-		--3 = Walking Left/Right
-		--4 = Running Down
-		--5 = Running Up
-		--6 = Running Left/Right
-		--7 = Bike Down
-		--8 = Bike Up
-		--9 = Bike left/right
-		--10 = Face down
-		--11 = Face up
-		--12 = Face left/right
-		
+	--This is for updating the previous coords with new ones, without looking janky
+	--AnimateID List
+	--0 = Standing Still
+	--1 = Walking Down
+	--2 = Walking Up
+	--3 = Walking Left/Right
+	--4 = Running Down
+	--5 = Running Up
+	--6 = Running Left/Right
+	--7 = Bike Down
+	--8 = Bike Up
+	--9 = Bike left/right
+	--10 = Face down
+	--11 = Face up
+	--12 = Face left/right
+	local FrameNumber = 0
+	
 	if CurrentX[PlayerNo] == 0 then CurrentX[PlayerNo] = FutureX[PlayerNo] end
 	if CurrentY[PlayerNo] == 0 then CurrentY[PlayerNo] = FutureY[PlayerNo] end
 	local AnimationMovementX = FutureX[PlayerNo] - CurrentX[PlayerNo]
@@ -3216,335 +2597,398 @@ function AnimatePlayerMovement(PlayerNo, AnimateID)
 	local ShiftedPlayerNo = PlayerNo - 1
 	local SpriteNumber = globalSpriteNo[PlayerNo]
 	-- Ensure that the player animation frame doesn't go below zero
-	PlayerAnimationFrame[PlayerNo] = math.max(PlayerAnimationFrame[PlayerNo], 0)
+	PlayerAnimationFrameTimer[PlayerNo] = math.max(PlayerAnimationFrameTimer[PlayerNo], 0)
 	-- Increment player animation frame every frame, surprise surprise!
-	PlayerAnimationFrame[PlayerNo] = PlayerAnimationFrame[PlayerNo] + 1
-	
-  --Horizontal Animations
-	--Animate left movement
-	if AnimationMovementX < 0 then
-	
-			--Walk
-		if AnimateID == 3 then
-			PlayerAnimationFrameMax[PlayerNo] = 14
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1
+	PlayerAnimationFrameTimer[PlayerNo] = PlayerAnimationFrameTimer[PlayerNo] + 1
 
-			if PlayerAnimationFrame[PlayerNo] == 5 then AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1 end
-			
-			if PlayerAnimationFrame[PlayerNo] == 9 then AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1 end
-			
-			if PlayerAnimationFrame[PlayerNo] >= 3 and PlayerAnimationFrame[PlayerNo] <= 11 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, WalkSide1ID, SpriteNumber)
+	 --Horizontal Animations
+		--Animate left movement
+		if AnimationMovementX < 0 then
+		
+		--Walk
+			if AnimateID == WalkSideAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 14
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1
+
+				if PlayerAnimationFrameTimer[PlayerNo] == 5 then AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1 end
+				
+				if PlayerAnimationFrameTimer[PlayerNo] == 9 then AnimationX[PlayerNo] = AnimationX[PlayerNo] - 1 end
+				
+				if PlayerAnimationFrameTimer[PlayerNo] >= 3 and PlayerAnimationFrameTimer[PlayerNo] <= 11 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = WalkSide1ID
+					else
+						FrameNumber = WalkSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo, WalkSide2ID, SpriteNumber)
+					FrameNumber = FaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo, FaceSideID, SpriteNumber)
-			end
 		--Run
-		elseif AnimateID == 6 then
-			PlayerAnimationFrameMax[PlayerNo] = 9
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] - 4
-			--	ConsoleForText:print("Frame: " .. PlayerAnimationFrame)
-			if PlayerAnimationFrame[PlayerNo] > 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,20,SpriteNumber)
+			elseif AnimateID == RunSideAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 9
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] - 4
+				--	ConsoleForText:print("Frame: " .. PlayerAnimationFrameTimer)
+				if PlayerAnimationFrameTimer[PlayerNo] > 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = RunSide1ID
+					else
+						FrameNumber = RunSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo,21,SpriteNumber)
+					FrameNumber = RunFaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo,19,SpriteNumber)
-			end
 		--Bike
-		elseif AnimateID == 9 then
-			PlayerAnimationFrameMax[PlayerNo] = 6
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] + ((AnimationMovementX*16)/3)
-			if PlayerAnimationFrame[PlayerNo] >= 1 and PlayerAnimationFrame[PlayerNo] < 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, BikeSide1ID, SpriteNumber)
+			elseif AnimateID == BikeSideAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 6
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] + ((AnimationMovementX*16)/3)
+				if PlayerAnimationFrameTimer[PlayerNo] >= 1 and PlayerAnimationFrameTimer[PlayerNo] < 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = BikeSide1ID
+					else
+						FrameNumber = BikeSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo, BikeSide2ID, SpriteNumber)
+					FrameNumber = BikeFaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo, BikeFaceSideID, SpriteNumber)
-			end
 		--Surf
-		elseif AnimateID == 23 then
-			PlayerAnimationFrameMax[PlayerNo] = 4
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] - 4
-			createChars(ShiftedPlayerNo, SurfSide1ID, 11 + HoennSurfBool[PlayerNo])
-			createChars(ShiftedPlayerNo, SitFaceSideID, SpriteNumber)
-		else
-		
-		end
-		
-		--Animate right movement
-	elseif AnimationMovementX > 0 then
-		if AnimateID == 13 then
-			PlayerAnimationFrameMax[PlayerNo] = 14
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1
-			if PlayerAnimationFrame[PlayerNo] == 5 then AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1 end
-			if PlayerAnimationFrame[PlayerNo] == 9 then AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1 end
-			if PlayerAnimationFrame[PlayerNo] >= 3 and PlayerAnimationFrame[PlayerNo] <= 11 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, WalkSide1ID, SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo, WalkSide2ID, SpriteNumber)
+			elseif AnimateID == SurfLeftAnimID then
+				FrameNumber = SitFaceSideID
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] - 4
+				if RegionID == HoennRegionID then createChars(ShiftedPlayerNo, SurfSide1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+				
+				elseif RegionID == KantoRegionID then
+
+					if not (PreviousPlayerAnimation[PlayerNo] >= SurfTurnDownAnimID and PreviousPlayerAnimation[PlayerNo] <= SurfRightAnimID) then
+						PlayerAnimationFlag[PlayerNo] = 0 PlayerAnimationFrameTimer[PlayerNo] = 24
+					end
+
+					PlayerAnimationFrameTimerMax[PlayerNo] = 48
+
+					if PlayerAnimationFlag[PlayerNo] == 0 then 
+						createChars(ShiftedPlayerNo, SurfSide1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 0
+
+					elseif PlayerAnimationFlag[PlayerNo] == 1 then 
+						createChars(ShiftedPlayerNo, SurfSide2ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 1
+
+					end
 				end
-			else
-				createChars(ShiftedPlayerNo, FaceSideID, SpriteNumber)
+
 			end
-		elseif AnimateID == 14 then
-			--	console:log("RUNNING RIGHT. FRAME: " .. PlayerAnimationFrame .. " FRAME2: " .. PlayerAnimationFrame2)
-			--	ConsoleForText:print("Running")
-			PlayerAnimationFrameMax[PlayerNo] = 9
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] + 4
-			if PlayerAnimationFrame[PlayerNo] > 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,20,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,21,SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo,19,SpriteNumber)
-			end
-		elseif AnimateID == 15 then
-			--	ConsoleForText:print("Bike")
-			PlayerAnimationFrameMax[PlayerNo] = 6
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] + ((AnimationMovementX*16)/3)
-			if PlayerAnimationFrame[PlayerNo] >= 1 and PlayerAnimationFrame[PlayerNo] < 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, BikeSide1ID, SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo, BikeSide2ID, SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo, BikeFaceSideID, SpriteNumber)
-			end
-		--Surf
-		elseif AnimateID == 24 then
-			PlayerAnimationFrameMax[PlayerNo] = 4
-			AnimationX[PlayerNo] = AnimationX[PlayerNo] + 4
-			createChars(ShiftedPlayerNo, SurfSide1ID, 11 + HoennSurfBool[PlayerNo])
-			createChars(ShiftedPlayerNo, SitFaceSideID, SpriteNumber)
-		else
-		
-		end
-	else
-		AnimationX[PlayerNo] = 0
-		CurrentX[PlayerNo] = FutureX[PlayerNo]
-		--Turn player left/right
-		if AnimateID == 12 then
-			PlayerAnimationFrameMax[PlayerNo] = 8
-			if PlayerAnimationFrame[PlayerNo] > 1 and PlayerAnimationFrame[PlayerNo] < 6 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, WalkSide1ID, SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo, WalkSide2ID, SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo, FaceSideID, SpriteNumber)
-			end
-		--If they are now equal
-		end
-		--Surfing animation
-		if AnimateID == 19 then
-			createChars(ShiftedPlayerNo,36,SpriteNumber)
-			if PreviousPlayerAnimation[PlayerNo] ~= 19 then PlayerAnimationFrame2[PlayerNo] = 0 PlayerAnimationFrame[PlayerNo] = 24 end
-			PlayerAnimationFrameMax[PlayerNo] = 48
-			if PlayerAnimationFrame2[PlayerNo] == 0 then createChars(ShiftedPlayerNo,30,SpriteNumber)
-			elseif PlayerAnimationFrame2[PlayerNo] == 1 then createChars(ShiftedPlayerNo,33,SpriteNumber)
-			end
-		elseif AnimateID == 20 then
-			createChars(ShiftedPlayerNo,36,SpriteNumber)
-			if PreviousPlayerAnimation[PlayerNo] ~= 20 then PlayerAnimationFrame2[PlayerNo] = 0 PlayerAnimationFrame[PlayerNo] = 24 end
-			PlayerAnimationFrameMax[PlayerNo] = 48
-			if PlayerAnimationFrame2[PlayerNo] == 0 then createChars(ShiftedPlayerNo,30,SpriteNumber)
-			elseif PlayerAnimationFrame2[PlayerNo] == 1 then createChars(ShiftedPlayerNo,33,SpriteNumber)
-			end
-		end
-		end
-		
-  --Vertical Animations
-		--Animate up movement
-	if AnimationMovementY < 0 then
-		if AnimateID == 2 then
-			PlayerAnimationFrameMax[PlayerNo] = 14
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1
-			if PlayerAnimationFrame[PlayerNo] == 5 then AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1 end
-			if PlayerAnimationFrame[PlayerNo] == 9 then AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1 end
-			if PlayerAnimationFrame[PlayerNo] >= 3 and PlayerAnimationFrame[PlayerNo] <= 11 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,6,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,7,SpriteNumber)
-				end	
-			else
-				createChars(ShiftedPlayerNo,2,SpriteNumber)
-			end
-		elseif AnimateID == 5 then
-			PlayerAnimationFrameMax[PlayerNo] = 9
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] - 4
-			if PlayerAnimationFrame[PlayerNo] > 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,23,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,24,SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo,22,SpriteNumber)
-			end
-		elseif AnimateID == 8 then
-			PlayerAnimationFrameMax[PlayerNo] = 6
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] + ((AnimationMovementY*16)/3)
-			if PlayerAnimationFrame[PlayerNo] >= 1 and PlayerAnimationFrame[PlayerNo] < 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,15,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,16,SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo,11,SpriteNumber)
-			end
-		--Surf
-		elseif AnimateID == 22 then
-			PlayerAnimationFrameMax[PlayerNo] = 4
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] - 4
-			createChars(ShiftedPlayerNo, SurfUp1ID, 11 + HoennSurfBool[PlayerNo])
-			createChars(ShiftedPlayerNo, SitFaceUpID, SpriteNumber)
-		end
 			
-		--Animate down movement
-	elseif AnimationMovementY > 0 then
-		if AnimateID == 1 then
-			ConsoleForText:print("animating down movement     AnimationY = " .. AnimationY[PlayerNo] .. str.char(10)) -- debug
-			PlayerAnimationFrameMax[PlayerNo] = 14
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1
-			if PlayerAnimationFrame[PlayerNo] == 5 then AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1 end
-			if PlayerAnimationFrame[PlayerNo] == 9 then AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1 end
-			if PlayerAnimationFrame[PlayerNo] >= 3 and PlayerAnimationFrame[PlayerNo] <= 11 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo, WalkDown1ID, SpriteNumber)
+		--Animate right movement
+		elseif AnimationMovementX > 0 then
+		--Walk
+			if AnimateID == WalkRightAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 14
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1
+				if PlayerAnimationFrameTimer[PlayerNo] == 5 then AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] == 9 then AnimationX[PlayerNo] = AnimationX[PlayerNo] + 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] >= 3 and PlayerAnimationFrameTimer[PlayerNo] <= 11 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = WalkSide1ID
+					else
+						FrameNumber = WalkSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo, WalkDown2ID, SpriteNumber)
+					FrameNumber = FaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo, FaceDownID, SpriteNumber)
-			end
-		elseif AnimateID == 4 then
-			PlayerAnimationFrameMax[PlayerNo] = 9
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] + 4
-			if PlayerAnimationFrame[PlayerNo] > 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,26,SpriteNumber)
+		--Run
+			elseif AnimateID == RunRightAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 9
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] + 4
+				if PlayerAnimationFrameTimer[PlayerNo] > 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = RunSide1ID
+					else
+						FrameNumber = RunSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo,27,SpriteNumber)
+					FrameNumber = RunFaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo,25,SpriteNumber)
-			end
-		elseif AnimateID == 7 then
-			PlayerAnimationFrameMax[PlayerNo] = 6
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] + ((AnimationMovementY*16)/3)
-			if PlayerAnimationFrame[PlayerNo] >= 1 and PlayerAnimationFrame[PlayerNo] < 5 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,17,SpriteNumber)
+		--Bike
+			elseif AnimateID == BikeRightAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 6
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] + ((AnimationMovementX*16)/3)
+				if PlayerAnimationFrameTimer[PlayerNo] >= 1 and PlayerAnimationFrameTimer[PlayerNo] < 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = BikeSide1ID
+					else
+						FrameNumber = BikeSide2ID
+					end
 				else
-				createChars(ShiftedPlayerNo,18,SpriteNumber)
+					FrameNumber = BikeFaceSideID
 				end
-			else
-				createChars(ShiftedPlayerNo,12,SpriteNumber)
-			end
 		--Surf
-		elseif AnimateID == 21 then
-			PlayerAnimationFrameMax[PlayerNo] = 4
-			AnimationY[PlayerNo] = AnimationY[PlayerNo] + 4
-			createChars(ShiftedPlayerNo, SurfDown1ID, 11 + HoennSurfBool[PlayerNo])
-			createChars(ShiftedPlayerNo, SitFaceDownID, SpriteNumber)
-			--If they are now equal
-		end
-		else
-		AnimationY[PlayerNo] = 0
-		CurrentY[PlayerNo] = FutureY[PlayerNo]
-		--Turn player down
-		if AnimateID == 10 then
-			PlayerAnimationFrameMax[PlayerNo] = 8
-			if PlayerAnimationFrame[PlayerNo] > 1 and PlayerAnimationFrame[PlayerNo] < 6 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,8,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,9,SpriteNumber)
+			elseif AnimateID == SurfRightAnimID then
+				FrameNumber = SitFaceSideID
+				AnimationX[PlayerNo] = AnimationX[PlayerNo] + 4
+				createChars(ShiftedPlayerNo, SurfSide1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+				
+				if RegionID == KantoRegionID then
+					PlayerAnimationFrameTimerMax[PlayerNo] = 4
 				end
-			else
-				createChars(ShiftedPlayerNo,3,SpriteNumber)
 			end
-		--Turn player up
-		
-		elseif AnimateID == 11 then
-			PlayerAnimationFrameMax[PlayerNo] = 8
-			if PlayerAnimationFrame[PlayerNo] > 1 and PlayerAnimationFrame[PlayerNo] < 6 then
-				if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,6,SpriteNumber)
-				else
-				createChars(ShiftedPlayerNo,7,SpriteNumber)
-				end
-			else
-				createChars(ShiftedPlayerNo,2,SpriteNumber)
-			end
+		--Animate no position change
 		else
-		--		createChars(ShiftedPlayerNo,3,SpriteNumber)
-		end
-		
+			AnimationX[PlayerNo] = 0
+			CurrentX[PlayerNo] = FutureX[PlayerNo]
+		--Turn player left/right
+			if AnimateID == TurnSideAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 8
+				if PlayerAnimationFrameTimer[PlayerNo] > 1 and PlayerAnimationFrameTimer[PlayerNo] < 6 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+						FrameNumber = WalkSide1ID
+					else
+						FrameNumber = WalkSide2ID
+					end
+				else
+					FrameNumber = FaceSideID
+				end
+			
 		--Surfing animation
-		if AnimateID == 17 then
-			createChars(ShiftedPlayerNo,34,SpriteNumber)
-			if PreviousPlayerAnimation[PlayerNo] ~= 17 then
-				PlayerAnimationFrame2[PlayerNo] = 0
-				PlayerAnimationFrame[PlayerNo] = 24
+			elseif AnimateID == SurfTurnLeftAnimID or AnimateID == SurfTurnRightAnimID then
+			FrameNumber = SitFaceSideID
+			if RegionID == HoennRegionID then createChars(ShiftedPlayerNo, SurfSide1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+
+			elseif RegionID == KantoRegionID then
+
+				if not (PreviousPlayerAnimation[PlayerNo] >= SurfTurnDownAnimID and PreviousPlayerAnimation[PlayerNo] <= SurfRightAnimID) then
+					PlayerAnimationFlag[PlayerNo] = 0 PlayerAnimationFrameTimer[PlayerNo] = 24
+				end
+				PlayerAnimationFrameTimerMax[PlayerNo] = 48
+
+				if PlayerAnimationFlag[PlayerNo] == 0 then 
+					createChars(ShiftedPlayerNo, SurfSide1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+					SurfBobAnimationY[PlayerNo] = 0
+
+				elseif PlayerAnimationFlag[PlayerNo] == 1 then 
+					createChars(ShiftedPlayerNo, SurfSide2ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+					SurfBobAnimationY[PlayerNo] = 1
+
+				end
+
 			end
-			PlayerAnimationFrameMax[PlayerNo] = 48
-			if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,28,SpriteNumber)
-			elseif PlayerAnimationFrame2[PlayerNo] == 1 then
-				createChars(ShiftedPlayerNo,31,SpriteNumber)
+		end
+		
+	 --Vertical Animations
+		--Animate up movement
+		if AnimationMovementY < 0 then
+		--Walk
+			if AnimateID == WalkUpAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 14
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1
+				if PlayerAnimationFrameTimer[PlayerNo] == 5 then AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] == 9 then AnimationY[PlayerNo] = AnimationY[PlayerNo] - 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] >= 3 and PlayerAnimationFrameTimer[PlayerNo] <= 11 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, WalkUp1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, WalkUp2ID, SpriteNumber)
+					end	
+				else
+					createChars(ShiftedPlayerNo, FaceUpID, SpriteNumber)
+				end
+		--Run
+			elseif AnimateID == RunUpAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 9
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] - 4
+				if PlayerAnimationFrameTimer[PlayerNo] > 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, RunUp1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, RunUp2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, RunFaceUpID, SpriteNumber)
+				end
+		--Bike
+			elseif AnimateID == BikeUpAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 6
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] + ((AnimationMovementY*16)/3)
+				if PlayerAnimationFrameTimer[PlayerNo] >= 1 and PlayerAnimationFrameTimer[PlayerNo] < 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, BikeUp1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, BikeUp2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, BikeFaceUpID, SpriteNumber)
+				end
+		--Surf
+			elseif AnimateID == SurfUpAnimID then
+				FrameNumber = SitFaceUpID
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] - 4
+				createChars(ShiftedPlayerNo, SurfUp1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+
+				if RegionID == KantoRegionID then
+					PlayerAnimationFrameTimerMax[PlayerNo] = 4
+				end
+
 			end
-		elseif AnimateID == 18 then
-			createChars(ShiftedPlayerNo,35,SpriteNumber)
-			if PreviousPlayerAnimation[PlayerNo] ~= 18 then
-				PlayerAnimationFrame2[PlayerNo] = 0
-				PlayerAnimationFrame[PlayerNo] = 24
+				
+		--Animate down movement
+		elseif AnimationMovementY > 0 then
+		--Walk
+			if AnimateID == WalkDownAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 14
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1
+				if PlayerAnimationFrameTimer[PlayerNo] == 5 then AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] == 9 then AnimationY[PlayerNo] = AnimationY[PlayerNo] + 1 end
+				if PlayerAnimationFrameTimer[PlayerNo] >= 3 and PlayerAnimationFrameTimer[PlayerNo] <= 11 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, WalkDown1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, WalkDown2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, FaceDownID, SpriteNumber)
+				end
+		--Run
+			elseif AnimateID == RunDownAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 9
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] + 4
+				if PlayerAnimationFrameTimer[PlayerNo] > 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, RunDown1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, RunDown2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, RunFaceDownID,SpriteNumber)
+				end
+		--Bike
+			elseif AnimateID == BikeDownAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 6
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] + ((AnimationMovementY*16)/3)
+				if PlayerAnimationFrameTimer[PlayerNo] >= 1 and PlayerAnimationFrameTimer[PlayerNo] < 5 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, BikeDown1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, BikeDown2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, BikeFaceDownID, SpriteNumber)
+				end
+		--Surf
+			elseif AnimateID == SurfDownAnimID then
+				FrameNumber = SitFaceDownID
+				AnimationY[PlayerNo] = AnimationY[PlayerNo] + 4
+				createChars(ShiftedPlayerNo, SurfDown1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+
+				if RegionID == KantoRegionID then
+					PlayerAnimationFrameTimerMax[PlayerNo] = 4
+				end
 			end
-			PlayerAnimationFrameMax[PlayerNo] = 48
-			if PlayerAnimationFrame2[PlayerNo] == 0 then
-				createChars(ShiftedPlayerNo,29,SpriteNumber)
-			elseif PlayerAnimationFrame2[PlayerNo] == 1 then
-				createChars(ShiftedPlayerNo,32,SpriteNumber)
+		--Animate no position change
+		else
+			AnimationY[PlayerNo] = 0
+			CurrentY[PlayerNo] = FutureY[PlayerNo]
+		--Turn player down
+			if AnimateID == TurnDownAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 8
+				if PlayerAnimationFrameTimer[PlayerNo] > 1 and PlayerAnimationFrameTimer[PlayerNo] < 6 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, WalkDown1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, WalkDown2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, FaceDownID, SpriteNumber)
+				end
+		--Turn player up
+			elseif AnimateID == TurnUpAnimID then
+				PlayerAnimationFrameTimerMax[PlayerNo] = 8
+				if PlayerAnimationFrameTimer[PlayerNo] > 1 and PlayerAnimationFrameTimer[PlayerNo] < 6 then
+					if PlayerAnimationFlag[PlayerNo] == 0 then
+					createChars(ShiftedPlayerNo, WalkUp1ID, SpriteNumber)
+					else
+					createChars(ShiftedPlayerNo, WalkUp2ID, SpriteNumber)
+					end
+				else
+					createChars(ShiftedPlayerNo, FaceUpID, SpriteNumber)
+				end
+			
+		--Surfing animation
+			elseif AnimateID == SurfTurnDownAnimID then
+				FrameNumber = SitFaceDownID
+				if RegionID == HoennRegionID then createChars(ShiftedPlayerNo, SurfDown1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+
+				elseif RegionID == KantoRegionID then
+
+					if not (PreviousPlayerAnimation[PlayerNo] >= SurfTurnDownAnimID and PreviousPlayerAnimation[PlayerNo] <= SurfRightAnimID) then
+						PlayerAnimationFlag[PlayerNo] = 0 PlayerAnimationFrameTimer[PlayerNo] = 24
+					end
+					PlayerAnimationFrameTimerMax[PlayerNo] = 48
+
+					if PlayerAnimationFlag[PlayerNo] == 0 then 
+						createChars(ShiftedPlayerNo, SurfDown1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 0
+
+					elseif PlayerAnimationFlag[PlayerNo] == 1 then 
+						createChars(ShiftedPlayerNo, SurfDown2ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 1
+
+					end
+
+				end
+			elseif AnimateID == SurfTurnUpAnimID then
+				FrameNumber = SitFaceUpID
+				if RegionID == HoennRegionID then createChars(ShiftedPlayerNo, SurfUp1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+
+				elseif RegionID == KantoRegionID then
+
+					if not (PreviousPlayerAnimation[PlayerNo] >= SurfTurnDownAnimID and PreviousPlayerAnimation[PlayerNo] <= SurfRightAnimID) then
+						PlayerAnimationFlag[PlayerNo] = 0 PlayerAnimationFrameTimer[PlayerNo] = 24
+					end
+					PlayerAnimationFrameTimerMax[PlayerNo] = 48
+
+					if PlayerAnimationFlag[PlayerNo] == 0 then 
+						createChars(ShiftedPlayerNo, SurfUp1ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 0
+
+					elseif PlayerAnimationFlag[PlayerNo] == 1 then 
+						createChars(ShiftedPlayerNo, SurfUp2ID, KantoSurfBlobSpriteID + HoennSurfBool[PlayerNo])
+						SurfBobAnimationY[PlayerNo] = 1
+
+					end
+
+				end
+
 			end
-		--If they are now equal
 		end
 	end
+
+	if FrameNumber ~= 0 then
+		createChars(ShiftedPlayerNo, FrameNumber, SpriteNumber)
+	end
+
+	--Hoenn Surfing Animation
+	if RegionID == HoennRegionID and AnimateID >= 17 and AnimateID <= 24 then
+		if not (PreviousPlayerAnimation[PlayerNo] >= SurfTurnDownAnimID and PreviousPlayerAnimation[PlayerNo] <= SurfRightAnimID) then
+			PlayerAnimationFlag[PlayerNo] = 0 PlayerAnimationFrameTimer[PlayerNo] = 0
+		end
+
+		PlayerAnimationFrameTimerMax[PlayerNo] = 32
+		local DivisionLength = 8
+		-- Only update the offset every 8 frames, just as the Hoennian god intended
+		if ((PlayerAnimationFrameTimer[PlayerNo] % DivisionLength) == 0) then 
+			if PlayerAnimationFrameTimer[PlayerNo] == DivisionLength then SurfBobAnimationY[PlayerNo] = -2
+			elseif PlayerAnimationFrameTimer[PlayerNo] == 2 * DivisionLength then SurfBobAnimationY[PlayerNo] = -1
+			elseif PlayerAnimationFrameTimer[PlayerNo] == 3 * DivisionLength then SurfBobAnimationY[PlayerNo] = 0
+			elseif PlayerAnimationFrameTimer[PlayerNo] == 4 * DivisionLength then SurfBobAnimationY[PlayerNo] = -1
+			end
+		end
+
+	end
+
+
+
+
   --Not vertical or horizontal animation
-	if AnimateID == 251 then
-		PlayerAnimationFrame[PlayerNo] = 0
-		AnimationX[PlayerNo] = 0
-		AnimationY[PlayerNo] = 0
-		CurrentX[PlayerNo] = FutureX[PlayerNo]
-		CurrentY[PlayerNo] = FutureY[PlayerNo]
-	elseif AnimateID == 252 then
-		PlayerAnimationFrame[PlayerNo] = 0
-		AnimationX[PlayerNo] = 0
-		AnimationY[PlayerNo] = 0
-		CurrentX[PlayerNo] = FutureX[PlayerNo]
-		CurrentY[PlayerNo] = FutureY[PlayerNo]
-	elseif AnimateID == 253 then
-		PlayerAnimationFrame[PlayerNo] = 0
-		AnimationX[PlayerNo] = 0
-		AnimationY[PlayerNo] = 0
-		CurrentX[PlayerNo] = FutureX[PlayerNo]
-		CurrentY[PlayerNo] = FutureY[PlayerNo]
-	elseif AnimateID == 254 then
-		PlayerAnimationFrame[PlayerNo] = 0
+	if AnimateID >= 251 and AnimateID <= 254 then
+		PlayerAnimationFrameTimer[PlayerNo] = 0
 		AnimationX[PlayerNo] = 0
 		AnimationY[PlayerNo] = 0
 		CurrentX[PlayerNo] = FutureX[PlayerNo]
@@ -3553,15 +2997,18 @@ function AnimatePlayerMovement(PlayerNo, AnimateID)
 		CurrentX[PlayerNo] = FutureX[PlayerNo]
 		CurrentY[PlayerNo] = FutureY[PlayerNo]
 	end
-		
-	if PlayerAnimationFrameMax[PlayerNo] <= PlayerAnimationFrame[PlayerNo] then
-		PlayerAnimationFrame[PlayerNo] = 0
-		if PlayerAnimationFrame2[PlayerNo] == 0 then
-			PlayerAnimationFrame2[PlayerNo] = 1
+
+  --AnimationFrame Management
+	if PlayerAnimationFrameTimerMax[PlayerNo] <= PlayerAnimationFrameTimer[PlayerNo] then
+		PlayerAnimationFrameTimer[PlayerNo] = 0
+		if PlayerAnimationFlag[PlayerNo] == 0 then
+			PlayerAnimationFlag[PlayerNo] = 1
 		else
-			PlayerAnimationFrame2[PlayerNo] = 0
+			PlayerAnimationFlag[PlayerNo] = 0
 		end
 	end
+
+	-- Wrap around
 	if AnimationX[PlayerNo] > 15 or AnimationX[PlayerNo] < -15 then
 		CurrentX[PlayerNo] = FutureX[PlayerNo]
 		AnimationX[PlayerNo] = 0
@@ -3570,6 +3017,7 @@ function AnimatePlayerMovement(PlayerNo, AnimateID)
 		CurrentY[PlayerNo] = FutureY[PlayerNo]
 		AnimationY[PlayerNo] = 0
 	end
+  --Update the PreviousPlayerAnimation variable
 	PreviousPlayerAnimation[PlayerNo] = AnimateID
 end
 
@@ -3599,133 +3047,132 @@ function HandleSprites()
 		PlayerChar = i - 1
 		
 		if PlayerID ~= i and PlayerIDNick[i] ~= "None" then
-			--ConsoleForText:print("handlesprites     PlayerExtra1 = " .. PlayerExtra1[i] .. string.char(10)) -- debug
-
+			-- debug ConsoleForText:print("PlayerExtra1: " .. PlayerExtra1[i] .. string.char(10))
 			--Facing down
-			if PlayerExtra1[i] == 1 then createChars(PlayerChar, FaceDownID, globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			if PlayerExtra1[i] == 1 then createChars(PlayerChar, FaceDownID, globalSpriteNo[i]) CurrentFacingDirection[i] = DownDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 251) 
 			
 			--Facing up
-			elseif PlayerExtra1[i] == 2 then createChars(PlayerChar, FaceUpID, globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 2 then createChars(PlayerChar, FaceUpID, globalSpriteNo[i]) CurrentFacingDirection[i] = UpDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 252) 
 			
 			--Facing left
-			elseif PlayerExtra1[i] == 3 then createChars(PlayerChar, FaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 3 then createChars(PlayerChar, FaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = LeftDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 253) 
 			
 			--Facing right
-			elseif PlayerExtra1[i] == 4 then createChars(PlayerChar, FaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 4 then createChars(PlayerChar, FaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = RightDirID Facing2[i] = FaceRightID AnimatePlayerMovement(i, 254) 
 			
 			--walk down
-			elseif PlayerExtra1[i] == 5 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 1)
+			elseif PlayerExtra1[i] == 5 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, WalkDownAnimID)
 			
 			--walk up
-			elseif PlayerExtra1[i] == 6 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 2)
+			elseif PlayerExtra1[i] == 6 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, WalkUpAnimID)
 			
 			--walk left
-			elseif PlayerExtra1[i] == 7 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 3)
+			elseif PlayerExtra1[i] == 7 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, WalkSideAnimID)
 			
 			--walk right
-			elseif PlayerExtra1[i] == 8 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 13)
+			elseif PlayerExtra1[i] == 8 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, WalkRightAnimID)
 			
 			--turn down
-			elseif PlayerExtra1[i] == 9 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 10)
+			elseif PlayerExtra1[i] == 9 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, TurnDownAnimID)  
 			
 			--turn up
-			elseif PlayerExtra1[i] == 10 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 11)
+			elseif PlayerExtra1[i] == 10 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, TurnUpAnimID)  
 			
 			--turn left
-			elseif PlayerExtra1[i] == 11 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 12)
+			elseif PlayerExtra1[i] == 11 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, TurnSideAnimID)  
 			
 			--turn right
-			elseif PlayerExtra1[i] == 12 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 12)
+			elseif PlayerExtra1[i] == 12 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, TurnSideAnimID) 
 			
 			--run down
-			elseif PlayerExtra1[i] == 13 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 4)
+			elseif PlayerExtra1[i] == 13 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, RunDownAnimID)
 			
 			--run up
-			elseif PlayerExtra1[i] == 14 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 5)
+			elseif PlayerExtra1[i] == 14 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, RunUpAnimID)
 			
 			--run left
-			elseif PlayerExtra1[i] == 15 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 6)
+			elseif PlayerExtra1[i] == 15 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, RunSideAnimID)
 			
 			--run right
-			elseif PlayerExtra1[i] == 16 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 14)
+			elseif PlayerExtra1[i] == 16 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, RunRightAnimID)
 			
 			--bike face down
-			elseif PlayerExtra1[i] == 17 then createChars(PlayerChar,12,globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			elseif PlayerExtra1[i] == 17 then createChars(PlayerChar,12,globalSpriteNo[i]) CurrentFacingDirection[i] = DownDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 251)
 			
 			--bike face up
-			elseif PlayerExtra1[i] == 18 then createChars(PlayerChar,11,globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 18 then createChars(PlayerChar,11,globalSpriteNo[i]) CurrentFacingDirection[i] = UpDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 252)
 			
 			--bike face left
-			elseif PlayerExtra1[i] == 19 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 19 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = LeftDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 253)
 			
 			--bike face right
-			elseif PlayerExtra1[i] == 20 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 20 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = RightDirID Facing2[i] = FaceRightID AnimatePlayerMovement(i, 254)
 			
 			--bike move down
-			elseif PlayerExtra1[i] == 21 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 7)
+			elseif PlayerExtra1[i] == 21 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, BikeDownAnimID)
 			
 			--bike move up
-			elseif PlayerExtra1[i] == 22 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 8)
+			elseif PlayerExtra1[i] == 22 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, BikeUpAnimID)
 			
 			--bike move left
-			elseif PlayerExtra1[i] == 23 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 9)
+			elseif PlayerExtra1[i] == 23 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, BikeSideAnimID)
 			
 			--bike move right
-			elseif PlayerExtra1[i] == 24 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 15)
+			elseif PlayerExtra1[i] == 24 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, BikeRightAnimID)
 			
 			--bike fast move down
-			elseif PlayerExtra1[i] == 25 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 7)
+			elseif PlayerExtra1[i] == 25 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, BikeDownAnimID)
 			
 			--bike fast move up
-			elseif PlayerExtra1[i] == 26 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 8)
+			elseif PlayerExtra1[i] == 26 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, BikeUpAnimID)
 			
 			--bike fast move left
-			elseif PlayerExtra1[i] == 27 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 9)
+			elseif PlayerExtra1[i] == 27 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, BikeSideAnimID)
 			
 			--bike fast move right
-			elseif PlayerExtra1[i] == 28 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 15)
+			elseif PlayerExtra1[i] == 28 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, BikeRightAnimID)
 			
 			--bike hit wall down
-			elseif PlayerExtra1[i] == 29 then createChars(PlayerChar,12,globalSpriteNo[i]) CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 251)
+			elseif PlayerExtra1[i] == 29 then createChars(PlayerChar, BikeFaceDownID, globalSpriteNo[i]) CurrentFacingDirection[i] = DownDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 251)
 			
 			--bike hit wall up
-			elseif PlayerExtra1[i] == 30 then createChars(PlayerChar,11,globalSpriteNo[i]) CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 252)
+			elseif PlayerExtra1[i] == 30 then createChars(PlayerChar, BikeFaceUpID, globalSpriteNo[i]) CurrentFacingDirection[i] = UpDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 252)
 			
 			--bike hit wall left
-			elseif PlayerExtra1[i] == 31 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 253)
+			elseif PlayerExtra1[i] == 31 then createChars(PlayerChar, BikeFaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = LeftDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 253)
 			
 			--bike hit wall right
-			elseif PlayerExtra1[i] == 32 then createChars(PlayerChar,10,globalSpriteNo[i]) CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 254)
+			elseif PlayerExtra1[i] == 32 then createChars(PlayerChar, BikeFaceSideID, globalSpriteNo[i]) CurrentFacingDirection[i] = RightDirID Facing2[i] = FaceRightID AnimatePlayerMovement(i, 254)
 			
 			--Surfing
 			
 			--Facing down
-			elseif PlayerExtra1[i] == 33 then CurrentFacingDirection[i] = 4 Facing2[i] = 0 AnimatePlayerMovement(i, 17)
+			elseif PlayerExtra1[i] == 33 then CurrentFacingDirection[i] = DownDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, SurfTurnDownAnimID)   
 			
 			--Facing up
-			elseif PlayerExtra1[i] == 34 then CurrentFacingDirection[i] = 3 Facing2[i] = 0 AnimatePlayerMovement(i, 18)
+			elseif PlayerExtra1[i] == 34 then CurrentFacingDirection[i] = UpDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, SurfTurnUpAnimID) 
 			
 			--Facing left
-			elseif PlayerExtra1[i] == 35 then CurrentFacingDirection[i] = 1 Facing2[i] = 0 AnimatePlayerMovement(i, 19)
+			elseif PlayerExtra1[i] == 35 then CurrentFacingDirection[i] = LeftDirID Facing2[i] = FaceLeftID AnimatePlayerMovement(i, SurfTurnLeftAnimID) 
 			
 			--Facing right
-			elseif PlayerExtra1[i] == 36 then CurrentFacingDirection[i] = 2 Facing2[i] = 1 AnimatePlayerMovement(i, 20)
+			elseif PlayerExtra1[i] == 36 then CurrentFacingDirection[i] = RightDirID Facing2[i] = FaceRightID AnimatePlayerMovement(i, SurfTurnRightAnimID) 
 			
 			--surf down
-			elseif PlayerExtra1[i] == 37 then Facing2[i] = 0 CurrentFacingDirection[i] = 4 AnimatePlayerMovement(i, 21)
+			elseif PlayerExtra1[i] == 37 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = DownDirID AnimatePlayerMovement(i, SurfDownAnimID)
 			
 			--surf up
-			elseif PlayerExtra1[i] == 38 then Facing2[i] = 0 CurrentFacingDirection[i] = 3 AnimatePlayerMovement(i, 22)
+			elseif PlayerExtra1[i] == 38 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = UpDirID AnimatePlayerMovement(i, SurfUpAnimID)
 			
 			--surf left
-			elseif PlayerExtra1[i] == 39 then Facing2[i] = 0 CurrentFacingDirection[i] = 1 AnimatePlayerMovement(i, 23)
+			elseif PlayerExtra1[i] == 39 then Facing2[i] = FaceLeftID CurrentFacingDirection[i] = LeftDirID AnimatePlayerMovement(i, SurfLeftAnimID)
 			
 			--surf right
-			elseif PlayerExtra1[i] == 40 then Facing2[i] = 1 CurrentFacingDirection[i] = 2 AnimatePlayerMovement(i, 24)
+			elseif PlayerExtra1[i] == 40 then Facing2[i] = FaceRightID CurrentFacingDirection[i] = RightDirID AnimatePlayerMovement(i, SurfRightAnimID)
 			
 			
 			--default position
-			elseif PlayerExtra1[i] == 0 then Facing2[i] = 0 AnimatePlayerMovement(i, 255)
+			elseif PlayerExtra1[i] == 0 then Facing2[i] = FaceLeftID AnimatePlayerMovement(i, 255)
 			
 			end
 		end
@@ -3815,7 +3262,7 @@ function CalculateRelativePositions()
 		TempX = ((CurrentX[i] - PlayerMapX) * 16) + DifferentMapX[i]
 		TempY = ((CurrentY[i] - PlayerMapY) * 16) + DifferentMapY[i]
 		if PlayerID ~= i and PlayerIDNick[i] ~= "None" then
-			if PlayerMapEntranceType == 0 and (PlayerMapIDPrev == CurrentMapID[i] or PlayerMapID == PreviousMapID[i]) and MapChange[i] == 0 then
+			if (PlayerMapEntranceType == 0) and (PlayerMapIDPrev == CurrentMapID[i] or PlayerMapID == PreviousMapID[i]) and MapChange[i] == 0 then
 				PlayerVis[i] = 1
 				TempX2 = TempX + DifferentMapXPlayer
 				TempY2 = TempY + DifferentMapYPlayer
@@ -3839,7 +3286,6 @@ end
 function DrawChars()
 	if EnableScript == true then
 		NoPlayersIfScreen()
-				--Make sure the sprites are loaded
 			
 		HandleSprites()
 		CalculateCamera()
@@ -3866,43 +3312,30 @@ end
 
 function DrawPlayer(PlayerNo)
 	--ConsoleForText:print("Drawing Player: " .. PlayerNo)
-		local u32 PlayerYAddress = 0
-		local u32 PlayerXAddress = 0
-		local u32 PlayerFaceAddress = 0
-		local u32 PlayerSpriteAddress = 0
-		local u32 PlayerExtra1Address = 0
-		local u32 PlayerExtra2Address = 0
-		local u32 PlayerExtra3Address = 0
-		local u32 PlayerExtra4Address = 0
 		local SpriteNo1 = 2608 - ((PlayerNo - 1) * 40)
 		local SpriteNo2 = SpriteNo1 + 18
 		--For extra char if not biking
 		local SpriteNo3 = SpriteNo1 + 8
 		--For extra char if biking
 		local SpriteNo4 = SpriteNo1 + 16
+
+
 		if GameID ~= "BPEE" then
 			--Addresses for Firered & Leafgreen
-			Player1Address = 50345200 - ((PlayerNo - 1) * 24)
+			SpriteTableAddress = 50345200 - ((PlayerNo - 1) * 24)
 		else
 			--Addresses for Emerald
-			Player1Address = 50341568 - ((PlayerNo - 1) * 24)
+			SpriteTableAddress = 50341568 - ((PlayerNo - 1) * 24)
 		end
-
-		PlayerYAddress = Player1Address
-		PlayerXAddress = PlayerYAddress + 2
-		PlayerFaceAddress = PlayerYAddress + 3
-		PlayerSpriteAddress = PlayerYAddress + 1
-		PlayerExtra1Address = PlayerYAddress + 4
-		PlayerExtra2Address = PlayerYAddress + 5
-		PlayerExtra3Address = PlayerYAddress + 6
-		PlayerExtra4Address = PlayerYAddress + 7
 		
-		
+		SurfBlobAddress = SpriteTableAddress + 8
+		IconAddress = SpriteTableAddress + 16
 		--Screen size (take into account movement)
 		local MinX = -16
 		local MaxX = 240
 		local MinY = -32
 		local MaxY = 144
+
 		--This is for the bike + surf
 		if PlayerExtra1[PlayerNo] >= 17 and PlayerExtra1[PlayerNo] <= 40 then MinX = -8 end
 		if PlayerExtra1[PlayerNo] >= 33 and PlayerExtra1[PlayerNo] <= 40 then MinX = 8 end
@@ -3915,34 +3348,14 @@ function DrawPlayer(PlayerNo)
 		local FacingTemp = 128
 		if Facing2[PlayerNo] == 1 then FacingTemp = 144 end
 		
-		if not ((FinalMapX > MaxX or FinalMapX < MinX) or (FinalMapY > MaxY or FinalMapY < MinY)) then 
+		if not ((FinalMapX > MaxX or FinalMapX < MinX) or (FinalMapY > MaxY or FinalMapY < MinY)) then
 			if PlayerVis[PlayerNo] == 1 then
 				--Bikes need different vars
 				if PlayerExtra1[PlayerNo] >= 17 and PlayerExtra1[PlayerNo] <= 32 then
-					FinalMapX = FinalMapX - 8
-					emu:write8(PlayerXAddress, FinalMapX)
-					emu:write8(PlayerYAddress, FinalMapY)
-					emu:write8(PlayerFaceAddress, FacingTemp)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, SpriteNo1)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 0)
+					FinalMapX = FinalMapX - 8	-- need to modify this because the sprite becomes bigger
+					WriteToSpriteList(SpriteTableAddress, FinalMapX, FinalMapY, FacingTemp, 0, SpriteNo1, 0, 0)
 					--Surfing char erase
-					PlayerYAddress = Player1Address + 8
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
+					WriteToSpriteList(SurfBlobAddress, 48, 160, 1, 0, 12, 0, 1)
 					--Add fighting symbol if in battle
 					if PlayerExtra4[PlayerNo] == 1 then
 						local SymbolY = FinalMapY - 8
@@ -3950,327 +3363,112 @@ function DrawPlayer(PlayerNo)
 						--Create battle symbol
 						createChars(PlayerNo - 1, 1, BattleIconID, 1)
 						--Extra Char
-						PlayerYAddress = Player1Address + 16
-						PlayerXAddress = PlayerYAddress + 2
-						PlayerFaceAddress = PlayerYAddress + 3
-						PlayerSpriteAddress = PlayerYAddress + 1
-						PlayerExtra1Address = PlayerYAddress + 4
-						PlayerExtra2Address = PlayerYAddress + 5
-						PlayerExtra3Address = PlayerYAddress + 6
-						PlayerExtra4Address = PlayerYAddress + 7
-						emu:write8(PlayerYAddress, SymbolY)
-						emu:write8(PlayerXAddress, SymbolX)
-						emu:write8(PlayerFaceAddress, 64)
-						emu:write8(PlayerSpriteAddress, 0)
-						emu:write16(PlayerExtra1Address, SpriteNo4)
-						emu:write8(PlayerExtra3Address, 0)
-						emu:write8(PlayerExtra4Address, 1)
+						WriteToSpriteList(IconAddress, SymbolX, SymbolY, 64, 0, SpriteNo4, 0, 1)
 					else
-						PlayerYAddress = Player1Address + 16
-						PlayerXAddress = PlayerYAddress + 2
-						PlayerFaceAddress = PlayerYAddress + 3
-						PlayerSpriteAddress = PlayerYAddress + 1
-						PlayerExtra1Address = PlayerYAddress + 4
-						PlayerExtra2Address = PlayerYAddress + 5
-						PlayerExtra3Address = PlayerYAddress + 6
-						PlayerExtra4Address = PlayerYAddress + 7
-						emu:write8(PlayerYAddress, 160)
-						emu:write8(PlayerXAddress, 48)
-						emu:write8(PlayerFaceAddress, 1)
-						emu:write8(PlayerSpriteAddress, 0)
-						emu:write16(PlayerExtra1Address, 12)
-						emu:write8(PlayerExtra3Address, 0)
-						emu:write8(PlayerExtra4Address, 1)
+						WriteToSpriteList(IconAddress, 48, 160, 1, 0, 12, 0, 1)
 					end
 				--Same with surf
 				elseif PlayerExtra1[PlayerNo] >= 33 and PlayerExtra1[PlayerNo] <= 40 then
-				if PlayerAnimationFrame2[PlayerNo] == 1 and PlayerExtra1[PlayerNo] <= 36 then FinalMapY = FinalMapY + 1 end
-				--Sitting char
-				emu:write8(PlayerXAddress, FinalMapX)
-				emu:write8(PlayerYAddress, FinalMapY)
-				emu:write8(PlayerFaceAddress, FacingTemp)
-				emu:write8(PlayerSpriteAddress, 128)
-				emu:write16(PlayerExtra1Address, SpriteNo1)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 0)
-				--Add fighting symbol if in battle
-				if PlayerExtra4[PlayerNo] == 1 then
-					local SymbolY = FinalMapY - 8
-					local SymbolX = FinalMapX
-					--Create battle symbol
-					createChars(PlayerNo - 1, 1, BattleIconID, 0)
-					--Extra Char
-					PlayerYAddress = Player1Address + 16
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, SymbolY)
-					emu:write8(PlayerXAddress, SymbolX)
-					emu:write8(PlayerFaceAddress, 64)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, SpriteNo3)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-				else
-					PlayerYAddress = Player1Address + 16
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-				end
-				--Surfing char
-				if PlayerAnimationFrame2[PlayerNo] == 1 and PlayerExtra1[PlayerNo] <= 36 then FinalMapY = FinalMapY - 1 end
-				FinalMapX = FinalMapX - 8
-				FinalMapY = FinalMapY + 8
-				PlayerYAddress = Player1Address + 8
-				PlayerXAddress = PlayerYAddress + 2
-				PlayerFaceAddress = PlayerYAddress + 3
-				PlayerSpriteAddress = PlayerYAddress + 1
-				PlayerExtra1Address = PlayerYAddress + 4
-				PlayerExtra2Address = PlayerYAddress + 5
-				PlayerExtra3Address = PlayerYAddress + 6
-				PlayerExtra4Address = PlayerYAddress + 7
-				emu:write8(PlayerXAddress, FinalMapX)
-				emu:write8(PlayerYAddress, FinalMapY)
-				emu:write8(PlayerFaceAddress, FacingTemp)
-				emu:write8(PlayerSpriteAddress, 0)
-				emu:write16(PlayerExtra1Address, SpriteNo2)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 0)
-				else
-				emu:write8(PlayerXAddress, FinalMapX)
-				emu:write8(PlayerYAddress, FinalMapY)
-				emu:write8(PlayerFaceAddress, FacingTemp)
-				emu:write8(PlayerSpriteAddress, 128)
-				emu:write16(PlayerExtra1Address, SpriteNo1)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 0)
-				--Surfing char
-				PlayerYAddress = Player1Address + 8
-				PlayerXAddress = PlayerYAddress + 2
-				PlayerFaceAddress = PlayerYAddress + 3
-				PlayerSpriteAddress = PlayerYAddress + 1
-				PlayerExtra1Address = PlayerYAddress + 4
-				PlayerExtra2Address = PlayerYAddress + 5
-				PlayerExtra3Address = PlayerYAddress + 6
-				PlayerExtra4Address = PlayerYAddress + 7
-				emu:write8(PlayerYAddress, 160)
-				emu:write8(PlayerXAddress, 48)
-				emu:write8(PlayerFaceAddress, 1)
-				emu:write8(PlayerSpriteAddress, 0)
-				emu:write16(PlayerExtra1Address, 12)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 1)
-				--Add fighting symbol if in battle
+					if (PlayerAnimationFlag[PlayerNo] == 1 or RegionID == HoennRegionID) and PlayerExtra1[PlayerNo] <= 36 then 
+						FinalMapY = FinalMapY + SurfBobAnimationY[PlayerNo]
+					end
+
+					--Sitting char
+					WriteToSpriteList(SpriteTableAddress, FinalMapX, FinalMapY, FacingTemp, 128, SpriteNo1, 0, 0)
+
+				  --Add fighting symbol if in battle
 					if PlayerExtra4[PlayerNo] == 1 then
 						local SymbolY = FinalMapY - 8
 						local SymbolX = FinalMapX
 						--Create battle symbol
 						createChars(PlayerNo - 1, 1, BattleIconID, 0)
 						--Extra Char
-						PlayerYAddress = Player1Address + 16
-						PlayerXAddress = PlayerYAddress + 2
-						PlayerFaceAddress = PlayerYAddress + 3
-						PlayerSpriteAddress = PlayerYAddress + 1
-						PlayerExtra1Address = PlayerYAddress + 4
-						PlayerExtra2Address = PlayerYAddress + 5
-						PlayerExtra3Address = PlayerYAddress + 6
-						PlayerExtra4Address = PlayerYAddress + 7
-						emu:write8(PlayerYAddress, SymbolY)
-						emu:write8(PlayerXAddress, SymbolX)
-						emu:write8(PlayerFaceAddress, 64)
-						emu:write8(PlayerSpriteAddress, 0)
-						emu:write16(PlayerExtra1Address, SpriteNo3)
-						emu:write8(PlayerExtra3Address, 0)
-						emu:write8(PlayerExtra4Address, 1)
+						WriteToSpriteList(IconAddress, SymbolX, SymbolY, 64, 0, SpriteNo3, 0, 1)
 					else
-						PlayerYAddress = Player1Address + 16
-						PlayerXAddress = PlayerYAddress + 2
-						PlayerFaceAddress = PlayerYAddress + 3
-						PlayerSpriteAddress = PlayerYAddress + 1
-						PlayerExtra1Address = PlayerYAddress + 4
-						PlayerExtra2Address = PlayerYAddress + 5
-						PlayerExtra3Address = PlayerYAddress + 6
-						PlayerExtra4Address = PlayerYAddress + 7
-						emu:write8(PlayerYAddress, 160)
-						emu:write8(PlayerXAddress, 48)
-						emu:write8(PlayerFaceAddress, 1)
-						emu:write8(PlayerSpriteAddress, 0)
-						emu:write16(PlayerExtra1Address, 12)
-						emu:write8(PlayerExtra3Address, 0)
-						emu:write8(PlayerExtra4Address, 1)
+						WriteToSpriteList(IconAddress, 48, 160, 1, 0, 12, 0, 1)
+					end
+					--Surfing char
+						--We only subtract the surf animation y height if the surf blob isn't supposed to move 
+					if RegionID == KantoRegionID and HoennSurfBool[PlayerNo] == 0 then	-- need to modify case for hoenn but overriding
+						if PlayerAnimationFlag[PlayerNo] == 1 and PlayerExtra1[PlayerNo] <= 36 then 
+							FinalMapY = FinalMapY - SurfBobAnimationY[PlayerNo]
+						end
+					end
+					
+					FinalMapX = FinalMapX - 8
+					FinalMapY = FinalMapY + 8
+					WriteToSpriteList(SurfBlobAddress, FinalMapX, FinalMapY, FacingTemp, 0, SpriteNo2, 0, 0)
+				--Walking char
+				else
+					WriteToSpriteList(SpriteTableAddress, FinalMapX, FinalMapY, FacingTemp, 128, SpriteNo1, 0, 0)
+					--Surfing char
+					WriteToSpriteList(SurfBlobAddress, 48, 160, 1, 0, 12, 0, 1)
+					--Add fighting symbol if in battle
+					if PlayerExtra4[PlayerNo] == 1 then
+						local SymbolY = FinalMapY - 8
+						local SymbolX = FinalMapX
+						--Create battle symbol
+						createChars(PlayerNo - 1, 1, BattleIconID, 0)
+						--Extra Char
+						WriteToSpriteList(IconAddress, SymbolX, SymbolY, 64, 0, SpriteNo3, 0, 1)
+					else
+						WriteToSpriteList(IconAddress, 48, 160, 1, 0, 12, 0, 1)
 					end
 				end
-			--Remove sprite
+			--Remove sprite (not surfing or biking)
 			else
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-					--Surfing char
-					PlayerYAddress = Player1Address + 8
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-					--Extra Char
-					PlayerYAddress = Player1Address + 16
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
+				WriteToSpriteList(SpriteTableAddress, 48, 160, 1, 0, 12, 0, 1)
+				--Surfing char
+				WriteToSpriteList(SurfBlobAddress, 48, 160, 1, 0, 12, 0, 1)
+				--Extra Char
+				WriteToSpriteList(IconAddress, 48, 160, 1, 0, 12, 0, 1)
 			end
-		--Remove sprite
+		--Remove sprite (not on screen) revisit for map edge glitchiness
 		else
-				emu:write8(PlayerYAddress, 160)
-				emu:write8(PlayerXAddress, 48)
-				emu:write8(PlayerFaceAddress, 1)
-				emu:write8(PlayerSpriteAddress, 0)
-				emu:write16(PlayerExtra1Address, 12)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 1)
-					--Surfing char
-					PlayerYAddress = Player1Address + 8
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-					--Extra Char
-					PlayerYAddress = Player1Address + 16
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
+			WriteToSpriteList(SpriteTableAddress, 48, 160, 1, 0, 12, 0, 1)
+			--Surfing char
+			WriteToSpriteList(SurfBlobAddress, 48, 160, 1, 0, 12, 0, 1)
+			--Extra Char
+			WriteToSpriteList(IconAddress, 48, 160, 1, 0, 12, 0, 1)
+
 		end
 end
+
+-- Tate Addition 
+function WriteToSpriteList(SpriteYAddress, X, Y, Facing, SpriteNumInTable, Extra1, Extra3, Extra4)
+	SpriteXAddress = SpriteYAddress + 2
+	SpriteFaceAddress = SpriteYAddress + 3
+	SpriteSpriteAddress = SpriteYAddress + 1
+	SpriteExtra1Address = SpriteYAddress + 4
+	SpriteExtra2Address = SpriteYAddress + 5
+	SpriteExtra3Address = SpriteYAddress + 6
+	SpriteExtra4Address = SpriteYAddress + 7
+
+	emu:write8(SpriteXAddress, X)
+	emu:write8(SpriteYAddress, Y)
+	emu:write8(SpriteFaceAddress, Facing)
+	emu:write8(SpriteSpriteAddress, SpriteNumInTable)
+	emu:write16(SpriteExtra1Address, Extra1)
+	emu:write8(SpriteExtra3Address, Extra3)
+	emu:write8(SpriteExtra4Address, Extra4)
+end
+
+
 function ErasePlayer(PlayerNo)
-		local u32 PlayerYAddress = 0
-		local u32 PlayerXAddress = 0
-		local u32 PlayerFaceAddress = 0
-		local u32 PlayerSpriteAddress = 0
-		local u32 PlayerExtra1Address = 0
-		local u32 PlayerExtra2Address = 0
-		local u32 PlayerExtra3Address = 0
-		local u32 PlayerExtra4Address = 0
+
 		if GameID == "BPR1" or GameID == "BPR2" or GameID == "BPEE" then
 			--Addresses for Firered
-			Player1Address = 50345200 - ((PlayerNo - 1) * 24)
-			PlayerYAddress = Player1Address
-			PlayerXAddress = PlayerYAddress + 2
-			PlayerFaceAddress = PlayerYAddress + 3
-			PlayerSpriteAddress = PlayerYAddress + 1
-			PlayerExtra1Address = PlayerYAddress + 4
-			PlayerExtra2Address = PlayerYAddress + 5
-			PlayerExtra3Address = PlayerYAddress + 6
-			PlayerExtra4Address = PlayerYAddress + 7
+			SpriteTableAddress = 50345200 - ((PlayerNo - 1) * 24)
 		elseif GameID == "BPG1" or GameID == "BPG2" then
 			--Addresses for Leafgreen
-			Player1Address = 50345200 - ((PlayerNo - 1) * 24)
-			PlayerYAddress = Player1Address
-			PlayerXAddress = PlayerYAddress + 2
-			PlayerFaceAddress = PlayerYAddress + 3
-			PlayerSpriteAddress = PlayerYAddress + 1
-			PlayerExtra1Address = PlayerYAddress + 4
-			PlayerExtra2Address = PlayerYAddress + 5
-			PlayerExtra3Address = PlayerYAddress + 6
-			PlayerExtra4Address = PlayerYAddress + 7
+			SpriteTableAddress = 50345200 - ((PlayerNo - 1) * 24)
 		end
-				emu:write8(PlayerYAddress, 160)
-				emu:write8(PlayerXAddress, 48)
-				emu:write8(PlayerFaceAddress, 1)
-				emu:write8(PlayerSpriteAddress, 0)
-				emu:write16(PlayerExtra1Address, 12)
-				emu:write8(PlayerExtra3Address, 0)
-				emu:write8(PlayerExtra4Address, 1)
-					--Surfing char
-					PlayerYAddress = Player1Address + 8
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
-					--Extra Char
-					PlayerYAddress = Player1Address + 16
-					PlayerXAddress = PlayerYAddress + 2
-					PlayerFaceAddress = PlayerYAddress + 3
-					PlayerSpriteAddress = PlayerYAddress + 1
-					PlayerExtra1Address = PlayerYAddress + 4
-					PlayerExtra2Address = PlayerYAddress + 5
-					PlayerExtra3Address = PlayerYAddress + 6
-					PlayerExtra4Address = PlayerYAddress + 7
-					emu:write8(PlayerYAddress, 160)
-					emu:write8(PlayerXAddress, 48)
-					emu:write8(PlayerFaceAddress, 1)
-					emu:write8(PlayerSpriteAddress, 0)
-					emu:write16(PlayerExtra1Address, 12)
-					emu:write8(PlayerExtra3Address, 0)
-					emu:write8(PlayerExtra4Address, 1)
+
+		WriteToSpriteList(SpriteTableAddress, 48, 160, 1, 0, 12, 0, 1)
+		--Surfing char
+		WriteToSpriteList(SpriteTableAddress + 8, 48, 160, 1, 0, 12, 0, 1)
+		--Extra Char
+		WriteToSpriteList(SpriteTableAddress + 16, 48, 160, 1, 0, 12, 0, 1)
 end
 
 --Unique for server
@@ -4591,9 +3789,9 @@ function ReceiveData(Clientell) --Clientell is an array of sockets that is fiddl
 						if ReceiveDataSmall[5] == "SPOS" and ReceiveDataSmall[3] ~= PlayerID2 then
 								PlayerIDNick[RECEIVEDID] = ReceiveDataSmall[2]
 								if CurrentMapID[RECEIVEDID] ~= ReceiveDataSmall[14] then
-									PlayerAnimationFrame[RECEIVEDID] = 0
-									PlayerAnimationFrame2[RECEIVEDID] = 0
-									PlayerAnimationFrameMax[RECEIVEDID] = 0
+									PlayerAnimationFrameTimer[RECEIVEDID] = 0
+									PlayerAnimationFlag[RECEIVEDID] = 0
+									PlayerAnimationFrameTimerMax[RECEIVEDID] = 0
 									CurrentMapID[RECEIVEDID] = ReceiveDataSmall[14]
 									PreviousMapID[RECEIVEDID] = ReceiveDataSmall[15]
 									MapEntranceType[RECEIVEDID] = ReceiveDataSmall[16]
@@ -4647,9 +3845,9 @@ function ReceiveData(Clientell) --Clientell is an array of sockets that is fiddl
 												Players[i] = Clientell
 											--	Players[i]:add("received",ReceiveData(Players[i]))
 												PlayerVis[i] = 1
-												PlayerAnimationFrame[i] = 0
-												PlayerAnimationFrame2[i] = 0
-												PlayerAnimationFrameMax[i] = 0
+												PlayerAnimationFrameTimer[i] = 0
+												PlayerAnimationFlag[i] = 0
+												PlayerAnimationFrameTimerMax[i] = 0
 												CurrentX[i] = ReceiveDataSmall[7]
 												CurrentY[i] = ReceiveDataSmall[8]
 												MapChange[i] = 0
@@ -4680,8 +3878,8 @@ function ReceiveData(Clientell) --Clientell is an array of sockets that is fiddl
 	end
 end
 
-function CreatePackettSpecial(RequestTemp, Socket2, OptionalData)
-	if RequestTemp == "POKE" then
+function CreatePackettSpecial(RequestType, Socket2, OptionalData)
+	if RequestType == "POKE" then
 		PlayerReceiveID = PlayerTalkingID2
 		GetPokemonTeam()
 		local PokeTemp
@@ -4693,39 +3891,39 @@ function CreatePackettSpecial(RequestTemp, Socket2, OptionalData)
 			StartNum = ((i - 1) * 25) + 1
 			StartNum2 = StartNum + 24
 			PokeTemp = string.sub(Pokemon[j],StartNum,StartNum2)
-			Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. PokeTemp .. Filler .. "U"
+			Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestType .. PokeTemp .. Filler .. "U"
 			ConsoleForText:print("Packett: " .. Packett .. string.char(10))
 			Socket2:send(Packett)
 			end
 		end
-	elseif RequestTemp == "TRAD" then
+	elseif RequestType == "TRAD" then
 		PlayerReceiveID = PlayerTalkingID2
-		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. TradeVars[1] .. TradeVars[2] .. TradeVars[3] .. TradeVars[5] .. "U"
+		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestType .. TradeVars[1] .. TradeVars[2] .. TradeVars[3] .. TradeVars[5] .. "U"
 		--4 + 4 + 4 + 4 + 4 + 3 + 40 + 1
 		if (debugBool) then ConsoleForText:print("Packett: " .. Packett .. string.char(10)) end
-	elseif RequestTemp == "BATT" then
+	elseif RequestType == "BATT" then
 		PlayerReceiveID = PlayerTalkingID2
 		local FillerSend = "100000000000000000000000000000000"
-		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. BattleVars[1] .. BattleVars[2] .. BattleVars[3] .. BattleVars[4] .. BattleVars[5] .. 
+		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestType .. BattleVars[1] .. BattleVars[2] .. BattleVars[3] .. BattleVars[4] .. BattleVars[5] .. 
 			BattleVars[6] .. BattleVars[7] .. BattleVars[8] .. BattleVars[9] .. BattleVars[10] .. FillerSend .. "U"
 			if (debugBool) then ConsoleForText:print("Packett: " .. Packett .. string.char(10)) end
 		Socket2:send(Packett)
-	elseif RequestTemp == "SLNK" then
+	elseif RequestType == "SLNK" then
 		PlayerReceiveID = PlayerTalkingID2
 		OptionalData = OptionalData or 0
 		local Filler = "100000000000000000000000000000000"
 		local SizeAct = OptionalData + 1000000000
   --		SizeAct = tostring(SizeAct)
   --		SizeAct = string.format("%.0f",SizeAct)
-		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. SizeAct .. Filler .. "U"
+		Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestType .. SizeAct .. Filler .. "U"
 		if (debugBool) then ConsoleForText:print("Packett: " .. Packett .. string.char(10)) end
 		Socket2:send(Packett)
 	end
 end
 --Send Data to clients
-function CreatePackett(RequestTemp, PackettTemp)
+function CreatePackett(RequestType, PackettTemp)
 	local FillerStuff = "F"
-	Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestTemp .. PackettTemp .. CurrentX[PlayerID] .. CurrentY[PlayerID] .. Facing2[PlayerID] .. PlayerExtra1[PlayerID] .. globalSpriteNo[PlayerID] .. PlayerExtra3[PlayerID] .. PlayerExtra4[PlayerID] .. PlayerMapID .. PlayerMapIDPrev .. PlayerMapEntranceType .. StartX[PlayerID] .. StartY[PlayerID] .. FillerStuff .. "U"
+	Packett = GameID .. Nickname .. PlayerID2 .. PlayerReceiveID .. RequestType .. PackettTemp .. CurrentX[PlayerID] .. CurrentY[PlayerID] .. Facing2[PlayerID] .. PlayerExtra1[PlayerID] .. globalSpriteNo[PlayerID] .. PlayerExtra3[PlayerID] .. PlayerExtra4[PlayerID] .. PlayerMapID .. PlayerMapIDPrev .. PlayerMapEntranceType .. StartX[PlayerID] .. StartY[PlayerID] .. FillerStuff .. "U"
 	if (debugBool) then ConsoleForText:print("Packett: " .. Packett .. string.char(10)) end
 end
 
@@ -4893,65 +4091,65 @@ function Interact()
 	local TooBusyByte = emu:read8(50335644)
 	local AddressGet = ""
 		
-		--Hide n seek
-		if LockFromScript == 1 then
-			if Var8000[5] == 2 then
-		--		ConsoleForText:print("Hide n' Seek selected")
-				LockFromScript = 0
+	--Hide n seek
+	if LockFromScript == 1 then
+		if Var8000[5] == 2 then
+	 --		ConsoleForText:print("Hide n' Seek selected")
+			LockFromScript = 0
+			Loadscript(3)
+			Keypressholding = 1
+			Keypress = 1
+		
+		elseif Var8000[5] == 1 then
+	 --		ConsoleForText:print("Hide n' Seek not selected")
+			LockFromScript = 0
+			Loadscript(3)
+			Keypressholding = 1
+			Keypress = 1
+		end
+	 --Interaction Multi-choice
+	elseif LockFromScript == 2 then
+		if Var8000[1] ~= Var8000[14] then
+			if Var8000[1] == 1 then
+	 --			ConsoleForText:print("Battle selected")
+				FixAddress()
+	 --			LockFromScript = 4
+	 --			Loadscript(4)
+				LockFromScript = 7
+				Loadscript(3)
+				Keypressholding = 1
+				Keypress = 1
+	 --			SendData("RBAT", Player2)
+			
+			elseif Var8000[1] == 2 then
+	 --			ConsoleForText:print("Trade selected")
+				FixAddress()
+				LockFromScript = 5
+				Loadscript(4)
+				Keypressholding = 1
+				Keypress = 1
+				SendData("RTRA", Players[PlayerTalkingID])
+			
+			elseif Var8000[1] == 3 then
+	 --			ConsoleForText:print("Card selected")
+				FixAddress()
+				LockFromScript = 6
 				Loadscript(3)
 				Keypressholding = 1
 				Keypress = 1
 			
-			elseif Var8000[5] == 1 then
-		--		ConsoleForText:print("Hide n' Seek not selected")
+			elseif Var8000[1] ~= 0 then
+	 --			ConsoleForText:print("Exit selected")
+	 			FixAddress()
 				LockFromScript = 0
-				Loadscript(3)
 				Keypressholding = 1
 				Keypress = 1
 			end
-		--Interaction Multi-choice
-		elseif LockFromScript == 2 then
-			if Var8000[1] ~= Var8000[14] then
-				if Var8000[1] == 1 then
-		--			ConsoleForText:print("Battle selected")
-					FixAddress()
-		--			LockFromScript = 4
-		--			Loadscript(4)
-					LockFromScript = 7
-					Loadscript(3)
-					Keypressholding = 1
-					Keypress = 1
-		--			SendData("RBAT", Player2)
-				
-				elseif Var8000[1] == 2 then
-		--			ConsoleForText:print("Trade selected")
-					FixAddress()
-					LockFromScript = 5
-					Loadscript(4)
-					Keypressholding = 1
-					Keypress = 1
-					SendData("RTRA", Players[PlayerTalkingID])
-				
-				elseif Var8000[1] == 3 then
-		--			ConsoleForText:print("Card selected")
-					FixAddress()
-					LockFromScript = 6
-					Loadscript(3)
-					Keypressholding = 1
-					Keypress = 1
-				
-				elseif Var8000[1] ~= 0 then
-		--			ConsoleForText:print("Exit selected")
-					FixAddress()
-					LockFromScript = 0
-					Keypressholding = 1
-					Keypress = 1
-				end
-			end
 		end
+	end
 	if Keypress ~= 0 then
 		if Keypress == 1 or Keypress == 65 or Keypress == 129 or Keypress == 33 or Keypress == 17 then
-	--		ConsoleForText:print("Pressed A")
+			--ConsoleForText:print("Pressed A")
 	
 			--SCRIPTS. LOCK AND PREVENT SPAM PRESS. 
 			if LockFromScript == 0 and Keypressholding == 0 and TooBusyByte == 0 then
@@ -4969,21 +4167,18 @@ function Interact()
 						TalkingDirX = PlayerMapX - CurrentX[i]
 						TalkingDirY = PlayerMapY - CurrentY[i]
 						if PlayerDirection == 1 and TalkingDirX == 1 and TalkingDirY == 0 then
-					--		ConsoleForText:print("Player Left")
+							ConsoleForText:print("Player Left")
 							
 						elseif PlayerDirection == 2 and TalkingDirX == -1 and TalkingDirY == 0 then
-					--		ConsoleForText:print("Player Right")
+							ConsoleForText:print("Player Right")
 						elseif PlayerDirection == 3 and TalkingDirY == 1 and TalkingDirX == 0 then
-					--		ConsoleForText:print("Player Up")
+							ConsoleForText:print("Player Up")
 						elseif PlayerDirection == 4 and TalkingDirY == -1 and TalkingDirX == 0 then
-					--		ConsoleForText:print("Player Down")
+							ConsoleForText:print("Player Down")
 						end
 						if (PlayerDirection == 1 and TalkingDirX == 1 and TalkingDirY == 0) or (PlayerDirection == 2 and TalkingDirX == -1 and TalkingDirY == 0) or (PlayerDirection == 3 and TalkingDirX == 0 and TalkingDirY == 1) or (PlayerDirection == 4 and TalkingDirX == 0 and TalkingDirY == -1) then
 						
-					--		ConsoleForText:print("Player Any direction")
-							emu:write16(Var8000Adr[1], 0) 
-							emu:write16(Var8000Adr[2], 0) 
-							emu:write16(Var8000Adr[14], 0)
+							ConsoleForText:print("Player Any direction")
 							PlayerTalkingID = i
 							PlayerTalkingID2 = i + 1000
 							LockFromScript = 2
@@ -5126,6 +4321,7 @@ function mainLoop()
 			--Update once every frame
 			TempVarTimer = ScriptTime % DebugTime3
 			if TempVarTimer == 0 then
+				
 				GetPosition()
 				ConnectNetwork()
 			end
@@ -5155,20 +4351,13 @@ function mainLoop()
 		Var8000Adr[5] = Startvaraddress + 8
 		Var8000Adr[6] = Startvaraddress + 10
 		Var8000Adr[14] = Startvaraddress + 26
-		Var8000[1] = emu:read16(Var8000Adr[1])
-		Var8000[2] = emu:read16(Var8000Adr[2])
-		Var8000[3] = emu:read16(Var8000Adr[3])
-		Var8000[4] = emu:read16(Var8000Adr[4])
-		Var8000[5] = emu:read16(Var8000Adr[5])
-		Var8000[6] = emu:read16(Var8000Adr[6])
-		Var8000[14] = emu:read16(Var8000Adr[14])
-		Var8000[1] = tonumber(Var8000[1])
-		Var8000[2] = tonumber(Var8000[2])
-		Var8000[3] = tonumber(Var8000[3])
-		Var8000[4] = tonumber(Var8000[4])
-		Var8000[5] = tonumber(Var8000[5])
-		Var8000[6] = tonumber(Var8000[6])
-		Var8000[14] = tonumber(Var8000[14])
+		Var8000[1] = tonumber(emu:read16(Var8000Adr[1]))
+		Var8000[2] = tonumber(emu:read16(Var8000Adr[2]))
+		Var8000[3] = tonumber(emu:read16(Var8000Adr[3]))
+		Var8000[4] = tonumber(emu:read16(Var8000Adr[4]))
+		Var8000[5] = tonumber(emu:read16(Var8000Adr[5]))
+		Var8000[6] = tonumber(emu:read16(Var8000Adr[6]))
+		Var8000[14] = tonumber(emu:read16(Var8000Adr[14]))
 			
 						--BATTLE/TRADE--
 			
