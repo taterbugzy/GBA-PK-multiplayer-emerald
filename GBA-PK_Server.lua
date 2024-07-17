@@ -1051,6 +1051,8 @@ function FixAddress()
 			MultichoiceAdr = 138281724
 		elseif GameID == "BPG2" then
 			MultichoiceAdr = 138281836
+		elseif GameID == "BPEE" then
+			MultiChoiceAdr = 140031888
 		end
 	if PrevExtraAdr ~= 0 then
 		emu:write32(MultichoiceAdr, PrevExtraAdr)
@@ -1061,7 +1063,7 @@ function Loadscript(ScriptNo)
 	local ScriptAddressTemp = 0
 	local ScriptAddressTemp1 = 0				--memory to force it to read the script in scriptaddress2
 
-	local u32 ScriptAddress2 = 145227776		--location of script
+	local u32 ScriptAddress2 = 145227776		--location of script 0x8A80000
 	
 	local u32 ScriptAddress3 = 145227712		--extra address for stuff like multi-choice
 	
@@ -1072,15 +1074,17 @@ function Loadscript(ScriptNo)
 	local Buffer1 = 33692880
 	local Buffer2 = 33692912
 	local Buffer3 = 33692932
-	local MultichoiceAdr = 0
-		if GameID == "BPR1" or GameID == "BPEE" then -- revise me
+	local MultichoiceAdr = 0	
+		if GameID == "BPR1" then
 			MultichoiceAdr = 138282176
 		elseif GameID == "BPR2" then
-			MultichoiceAdr = 138282288
+			MultichoiceAdr = 138282288 -- The script we write to memory for the GBA to execute references multichoice list number 2, this is the address of the pointer to the table of pointers of text options
 		elseif GameID == "BPG1" then
 			MultichoiceAdr = 138281724
 		elseif GameID == "BPG2" then
 			MultichoiceAdr = 138281836
+		elseif GameID == "BPEE" then
+			MultiChoiceAdr = 140031888
 		end
 	
 		--Convert 4-byte buffer to readable bytes in case its needed
@@ -1110,8 +1114,8 @@ function Loadscript(ScriptNo)
 		--		LoadScriptIntoMemory()
 			--Host script
 			elseif ScriptNo == 1 then 
-				emu:write16(Var8000Adr[2], 0) 
-				emu:write16(Var8000Adr[5], 0) 
+				emu:write16(Var8000Adr[2], 0)
+				emu:write16(Var8000Adr[5], 0)
 
 				local HostScript = {603983722, 151562240, 2148344069, 17170433, 145227804, 25166870, 4278348800, 41944086, 4278348800, 3773424593, 3823960280, 3722445033, 3892369887, 3805872355, 3655390933, 3638412030, 3034710233, 3654929664, 16755935}
 				 
@@ -1123,128 +1127,131 @@ function Loadscript(ScriptNo)
 				LoadScriptIntoMemory()
 		--Interaction Menu	Multi Choice
 			elseif ScriptNo == 2 then
-				ConsoleForText:print("loading script to bring up multi choice interaction menu" .. string.char(10))
 				emu:write16(Var8000Adr[1], 0) 
 				emu:write16(Var8000Adr[2], 0) 
 				emu:write16(Var8000Adr[14], 0) 
-				 
-				ScriptAddressTemp1 = 1664873
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 1868957864
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 132117
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 226492441
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 2147489664
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 40566785
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3588018687
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3823829224
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14213353
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 15328237
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3655327200
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14936318
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 3942704088
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 14477533
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4289463293
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = 4294967040
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				--For buffer 2
-				ScriptAddressTemp = 33692912
-				ScriptAddressTemp1 = Buffer[1]
-				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = 33692912 + 1
-				ScriptAddressTemp1 = Buffer[2]
-				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = 33692912 + 2
-				ScriptAddressTemp1 = Buffer[3]
-				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = 33692912 + 3
-				ScriptAddressTemp1 = Buffer[4]
-				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = 33692912 + 4
-				ScriptAddressTemp1 = 255
-				emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
+				--This part only writes the prompt
+					ScriptAddressTemp1 = 1664873
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 1868957864
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 132117
+					if GameID == "BPEE" then ScriptAddressTemp1 = 394261 end -- this switches the parameter of the multichoice script command since the tables differ
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 226492441
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 2147489664
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 40566785
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 3588018687
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 3823829224
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 14213353
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 15328237
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 3655327200
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 14936318
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 3942704088
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 14477533
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 4289463293
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = 4294967040
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				--Writes the nickname of the player you're interacting with to a location in memory
+					ConsoleForText:print("Buffer: " .. Buffer[1] .. " " .. Buffer[2] .. " " .. Buffer[3] .. " " .. Buffer[4] .. string.char(10))
+					ScriptAddressTemp = 33692912
+					if GameID == "BPEE" then ScriptAddressTemp = 33693667 end
+					ScriptAddressTemp1 = Buffer[1]
+					emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 1
+					ScriptAddressTemp1 = Buffer[2]
+					emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 1
+					ScriptAddressTemp1 = Buffer[3]
+					emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 1
+					ScriptAddressTemp1 = Buffer[4]
+					emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 1
+					ScriptAddressTemp1 = 255
+					emu:write8(ScriptAddressTemp, ScriptAddressTemp1)
 				--First save multichoice in case it's needed later
 				PrevExtraAdr = ROMCARD:read32(MultichoiceAdr)
-				--Overwrite multichoice 0x2 with a custom at address MultichoiceAdr2
-				ScriptAddressTemp = MultichoiceAdr
-				ScriptAddressTemp1 = MultichoiceAdr2
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				--Multi-Choice
-				ScriptAddressTemp = MultichoiceAdr2
-				ScriptAddressTemp1 = ScriptAddress3
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 0
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4 
-				ScriptAddressTemp1 = ScriptAddress3 + 7
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 0
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = ScriptAddress3 + 13
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 0
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = ScriptAddress3 + 18
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 0
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				--ConsoleForText:print("MultiChoiceAdr: " .. MultichoiceAdr .. " MultiChoiceAdr2: " .. MultichoiceAdr2 .. string.char(10))
+				--Overwrite multichoice ID (FR/LG multichoice #2 but Emerald multichoice #39) pointer with a custom at address MultichoiceAdr2
+				ROMCARD:write32(MultichoiceAdr, MultichoiceAdr2)
+				--local temp = ROMCARD:read32(MultiChoiceAdr)
+				--ConsoleForText:print("0x0858B790: " .. temp .. " MultiChoiceAdr2: " .. MultichoiceAdr2 .. string.char(10))
+				--This section writes what I think are the pointers to the text options we write after this
+					ScriptAddressTemp = MultichoiceAdr2
+					ScriptAddressTemp1 = ScriptAddress3
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 0
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4 
+					ScriptAddressTemp1 = ScriptAddress3 + 7
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 0
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = ScriptAddress3 + 13
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 0
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = ScriptAddress3 + 18
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 0
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
 				--Text
-				ScriptAddressTemp = ScriptAddress3
-				ScriptAddressTemp1 = 3907573180
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 3472873952
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 3654866406
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 3872767487
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 3972005848
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
-				ScriptAddressTemp = ScriptAddressTemp + 4
-				ScriptAddressTemp1 = 4294961373
-				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddress3
+					ScriptAddressTemp1 = 3907573180
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 3472873952
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 3654866406
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 3872767487
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 3972005848
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+					ScriptAddressTemp = ScriptAddressTemp + 4
+					ScriptAddressTemp1 = 4294961373
+					ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
 				LoadScriptIntoMemory()
 		--Placeholder
 			elseif ScriptNo == 3 then
-				emu:write16(Var8000Adr[2], 0) 
+				emu:write16(Var8000Adr[2], 0)
 
 				local PlaceholderScript = {285216618, 151562240, 2147554822, 40632321, 3907242239, 3689078236, 3839220736, 3655522788, 16756952, 4294967295}
 				 
@@ -1255,7 +1262,7 @@ function Loadscript(ScriptNo)
 				LoadScriptIntoMemory()
 		--Waiting message
 			elseif ScriptNo == 4 then
-				emu:write16(Var8000Adr[2], 0) 
+				emu:write16(Var8000Adr[2], 0)
 
 				
 				local WaitingScript = {1271658, 375785640, 5210113, 654415909, 3523150444, 3723025877, 3657489378, 3808487139, 3873037544, 3588285440, 2967919085, 4294902015}
@@ -1268,7 +1275,7 @@ function Loadscript(ScriptNo)
 				LoadScriptIntoMemory()
 		--Cancel message
 			elseif ScriptNo == 5 then
-				emu:write16(Var8000Adr[2], 0) 
+				emu:write16(Var8000Adr[2], 0)
 
 				local CancelScript = {285216618, 151562240, 2147554822, 40632325, 3655126783, 3706249984, 3825264345, 3656242656, 3587965158, 3587637479, 3772372962, 4289583321, 4294967040}
 				 
@@ -1279,7 +1286,7 @@ function Loadscript(ScriptNo)
 				LoadScriptIntoMemory()
 		--Trade request
 			elseif ScriptNo == 6 then
-				emu:write16(Var8000Adr[2], 0) 
+				emu:write16(Var8000Adr[2], 0)
 
 				local TradeRequestScript = {469765994, 151562240, 2148344069, 393217, 145227850, 41943318, 4278348800, 3942646781, 3655133149, 3823632615, 3588679680, 3942701528, 14477533, 2917786605, 14925566, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
 				 
@@ -1319,12 +1326,99 @@ function Loadscript(ScriptNo)
 			elseif ScriptNo == 8 then
 				emu:write16(Var8000Adr[2], 0) 
 
-				local TradeOfferScript = {469765994, 151562240, 2148344069, 393217, 145227866, 41943318, 4278348800, 15328211, 3656046044, 3671778048, 3638159065, 2902719744, 3655126782, 3587965165, 3808483818, 3873037018, 4244691161, 3522931970, 14737629, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
+				--local TradeOfferScript = {469765994, 151562240, 2148344069, 393217, 145227866, 41943318, 4278348800, 15328211, 3656046044, 3671778048, 3638159065, 2902719744, 3655126782, 3587965165, 3808483818, 3873037018, 4244691161, 3522931970, 14737629, 15328237, 3654801365, 4289521892, 18284288, 1811939712, 4294967042}
 				 
-				for i = 1, #TradeOfferScript do
-					ROMCARD:write32(ScriptAddressTemp, TradeOfferScript[i]) 
-					ScriptAddressTemp = ScriptAddressTemp + 4 
-				end
+				--for i = 1, #TradeOfferScript do
+				--	ROMCARD:write32(ScriptAddressTemp, TradeOfferScript[i]) 
+				--	ScriptAddressTemp = ScriptAddressTemp + 4 
+				--end
+
+
+				ScriptAddressTemp = ScriptAddress2
+				ScriptAddressTemp1 = 469765994
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 151562240
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 2148344069
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 393217
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 145227866
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 41943318
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 4278348800
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 15328211
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3656046044
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3671778048
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3638159065
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1) 
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 2902719744
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)  
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3655126782
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3587965165
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3808483818
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3873037018
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 4244691161
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3522931970
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 14737629
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 15328237
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 3654801365
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 4289521892
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 18284288
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 1811939712
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+				ScriptAddressTemp = ScriptAddressTemp + 4 
+				ScriptAddressTemp1 = 4294967042
+				ROMCARD:write32(ScriptAddressTemp, ScriptAddressTemp1)
+
+
+
+
+
+
+
+
+
+
 				LoadScriptIntoMemory()
 		--Trade offer denied
 			elseif ScriptNo == 9 then
@@ -1523,8 +1617,10 @@ function Loadscript(ScriptNo)
 			
 end
 
+
+
 function ApplyMovement(MovementType)
-	local u32 ScriptAddress = 50335400
+	local u32 ScriptAddress = 50335400 -- got changed for emerald in another function but not here 50335288
 	local u32 ScriptAddress2 = 145227776
 	local ScriptAddressTemp = 0
 	local ScriptAddressTemp1 = 0
@@ -1565,13 +1661,15 @@ end
 
 function LoadScriptIntoMemory()
 	--This puts the script at ScriptAddress into the memory, forcing it to load
-
 	local u32 ScriptAddress = 50335400
+
+	if GameID == "BPEE" then 
+		ScriptAddress = 50335288
+	end
+	
 	local u32 ScriptAddress2 = 145227776
-	local ScriptAddressTemp = 0
 	local ScriptAddressTemp1 = 0
-	ScriptAddressTemp = ScriptAddress
-	ScriptAddressTemp1 = 0
+	local ScriptAddressTemp = ScriptAddress
 	emu:write32(ScriptAddressTemp, ScriptAddressTemp1) 
 	ScriptAddressTemp = ScriptAddressTemp + 4 
 	ScriptAddressTemp1 = 0
@@ -4339,10 +4437,12 @@ function mainLoop()
 				end
 			end
 							--VARS--
-		if GameID == "BPR1" or GameID == "BPR2" or GameID == "BPEE" then
+		if GameID == "BPR1" or GameID == "BPR2" then
 			Startvaraddress = 33779896
 		elseif GameID == "BPG1" or GameID == "BPG2" then
 			Startvaraddress = 33779896
+		elseif GameID == "BPEE" then
+			Startvaraddress = 33781208
 		end
 		Var8000Adr[1] = Startvaraddress
 		Var8000Adr[2] = Startvaraddress + 2
@@ -4385,7 +4485,7 @@ function mainLoop()
 						Loadscript(20)
 					end
 				end
---				if SendTimer == 0 then SendData("RBAT") end
+ --				if SendTimer == 0 then SendData("RBAT") end
 				
 			--Wait until other player accepts trade
 			elseif LockFromScript == 5 then
